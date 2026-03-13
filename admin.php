@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $stmt = $conn->prepare("INSERT INTO cars
             (car_name,brand,category,year,price,kms,transmission,engine,power,drive,seats,description,location,badge,image_path)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-        $stmt->bind_param("ssssisssssisss s",
+        $stmt->bind_param("ssssssssssissss",
             $car_name,$brand,$category,$year,$price,$kms,$transmission,
             $engine,$power,$drive,$seats,$description,$location,$badge,$image_path
         );
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $stmt = $conn->prepare("INSERT INTO cars
             (car_name,brand,category,year,price,kms,transmission,engine,power,drive,seats,description,location,badge,image_path)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-        $stmt->bind_param("ssssisssssisss s",
+        $stmt->bind_param("ssssssssssissss",
             $car_name,$brand,$category,$year,$price,$kms,$transmission,
             $engine,$power,$drive,$seats,$description,$location,$badge,$image_path
         );
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $sql2 = "INSERT INTO cars (car_name,brand,category,year,price,kms,transmission,engine,power,drive,seats,description,location,badge,image_path)
                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         $stmt2 = $conn->prepare($sql2);
-        $stmt2->bind_param("ssssisssssissss",
+        $stmt2->bind_param("ssssssssssissss",
             $car_name,$brand,$category,$year,$price,$kms,
             $transmission,$engine,$power,$drive,$seats,
             $description,$location,$badge,$image_path

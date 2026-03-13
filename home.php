@@ -337,7 +337,7 @@ ob_end_flush();
         $eb = addslashes(htmlspecialchars($car['brand']));
         $ed = addslashes(htmlspecialchars($car['description']));
         $ec = addslashes(htmlspecialchars($car['category']));
-        $ep = addslashes(htmlspecialchars($car['price']));
+        $ep = addslashes(htmlspecialchars(string: $car['price']));
         $ee = addslashes(htmlspecialchars($car['engine'] ?: '–'));
         $ew = addslashes(htmlspecialchars($car['power']  ?: '–'));
         $ev = addslashes(htmlspecialchars($car['drive']  ?: '–'));

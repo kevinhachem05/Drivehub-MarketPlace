@@ -5,9 +5,10 @@ include 'db.php';
 
 $admin_emails = [
     'admin@drivehub.lb',
-    'admin2@drivehub.lb',
-    'superadmin@drivehub.lb'
+    'admin2@drivehub.lb'
 ];
+
+$superadmin_email = ['superadmin@drivehub.lb'];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email    = trim($_POST['email']);
@@ -39,7 +40,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['first_name'] = $user['first_name'];
             $_SESSION['email']      = $user['email'];
 
-            if (in_array(strtolower(trim($email)), array_map('strtolower', $admin_emails))) {
+            if (in_array(strtolower(trim($email)), array_map('strtolower', $superadmin_email))) {
+                $_SESSION['role'] = 'superadmin';
+                ob_end_clean();
+                header("Location: superadmin.php");
+                exit();
+            }
+
+            elseif (in_array(strtolower(trim($email)), array_map('strtolower', $admin_emails))) {
                 $_SESSION['role'] = 'admin';
                 ob_end_clean();
                 header("Location: admin.php");

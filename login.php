@@ -5,7 +5,7 @@ include 'db.php';
 
 $admin_emails = [
     'admin@drivehub.lb',
-    'manager@drivehub.lb',
+    'admin2@drivehub.lb',
     'superadmin@drivehub.lb'
 ];
 

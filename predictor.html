@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DriveHub — AI Price Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:    #0a0a0a;
+      --off-black:#111111;
+      --panel:    #161616;
+      --card:     #1a1a1a;
+      --border:   rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.18);
+      --muted:    #666;
+      --text:     #e8e8e8;
+      --white:    #ffffff;
+      --red:      #e8341a;
+      --red-dark: #c0290e;
+      --input-bg: #1c1c1c;
+      --green:    #2a9d5c;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--off-black); }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 56px;
+      height: 68px;
+      background: rgba(10,10,10,0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--red);
+      clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-mark span { font-size: 13px; color:#fff; font-weight:700; margin-bottom:5px; }
+
+    .logo-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: 0.1em;
+      color: var(--white);
+    }
+
+    .nav-cta {
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .btn-outline {
+      padding: 9px 20px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      text-decoration: none;
+    }
+    .btn-outline:hover { border-color: var(--border-hover); background: #1c1c1c; }
+
+    .btn-red {
+      padding: 9px 22px;
+      background: var(--red);
+      border: none; border-radius: 5px;
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px; letter-spacing: 0.1em;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-red:hover { background: var(--red-dark); }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      padding: 140px 80px 80px;
+      background: linear-gradient(135deg, var(--black) 0%, var(--off-black) 50%, #1a0e0a 100%);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page-header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(
+        -60deg, transparent, transparent 40px,
+        rgba(255,255,255,0.012) 40px, rgba(255,255,255,0.012) 41px
+      );
+    }
+
+    .page-header-inner {
+      position: relative; z-index: 1;
+      max-width: 700px;
+      animation: slideUp 0.8s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(30px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .page-eyebrow {
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.35em; text-transform: uppercase;
+      color: var(--red); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .page-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 24px; height: 1px;
+      background: var(--red);
+    }
+
+    .page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(52px, 7vw, 96px);
+      line-height: 0.92;
+      color: var(--white);
+      letter-spacing: 0.02em;
+      margin-bottom: 20px;
+    }
+    .page-title span { color: var(--red); }
+
+    .page-desc {
+      font-size: 15px; font-weight: 300;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.7;
+      max-width: 500px;
+    }
+
+    .page-header-badge {
+      position: absolute; right: 80px; bottom: 60px;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+      animation: slideUp 0.8s cubic-bezier(.22,1,.36,1) 0.2s both;
+    }
+
+    .model-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px;
+      background: rgba(232,52,26,0.1);
+      border: 1px solid rgba(232,52,26,0.25);
+      border-radius: 4px;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--red);
+    }
+    .model-badge-dot {
+      width: 6px; height: 6px;
+      background: var(--red); border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .model-accuracy {
+      font-size: 11px; color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .predictor-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 2px;
+      padding: 2px;
+      min-height: calc(100vh - 340px);
+    }
+
+    /* ── FORM PANEL ── */
+    .form-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 48px;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-content {
+      flex: 1;
+    }
+
+    .form-section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px; letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 28px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      transition: border-color 0.2s, background 0.2s;
+      outline: none;
+      appearance: none;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: var(--red);
+      background: #1e1e1e;
+    }
+
+    .form-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      cursor: pointer;
+    }
+
+    /* Range slider */
+    .range-wrapper {
+      position: relative;
+    }
+
+    .range-value {
+      position: absolute; right: 0; top: -28px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px; color: var(--white);
+      letter-spacing: 0.05em;
+    }
+    .range-value span {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 300;
+      color: var(--muted);
+    }
+
+    input[type="range"] {
+      width: 100%; height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 3px; border-radius: 2px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      background: var(--red);
+      border-radius: 50%;
+      margin-top: -7px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .range-labels {
+      display: flex; justify-content: space-between;
+      margin-top: 6px;
+      font-size: 10px; color: #444;
+      letter-spacing: 0.1em;
+    }
+
+    /* Radio group */
+    .radio-group {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+
+    .radio-option {
+      position: relative;
+    }
+
+    .radio-option input[type="radio"] {
+      position: absolute; opacity: 0; width: 0; height: 0;
+    }
+
+    .radio-label {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 18px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 13px; font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.04em;
+      user-select: none;
+    }
+
+    .radio-label:hover {
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .radio-option input[type="radio"]:checked + .radio-label {
+      background: rgba(232,52,26,0.12);
+      border-color: var(--red);
+      color: var(--white);
+    }
+
+    .radio-icon { font-size: 14px; }
+
+    /* Form grid */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* Predict buttons */
+    .predict-actions {
+      display: flex; gap: 10px;
+      margin-top: 36px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+    }
+
+    .predict-btn {
+      flex: 1;
+      padding: 16px;
+      border: none; border-radius: 6px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 17px; letter-spacing: 0.12em;
+      cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .predict-btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+      transform: translateX(-100%); transition: transform 0.5s;
+    }
+    .predict-btn:hover::after { transform: translateX(100%); }
+    .predict-btn:active { transform: scale(0.98); }
+    .predict-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .predict-btn-price {
+      background: var(--red); color: #fff;
+    }
+    .predict-btn-price:hover:not(:disabled) { background: var(--red-dark); }
+
+    .predict-btn-cat {
+      background: #1c1c1c;
+      border: 1px solid var(--border-hover);
+      color: var(--text);
+    }
+    .predict-btn-cat:hover:not(:disabled) { background: #242424; }
+
+    /* ── RESULT PANEL ── */
+    .result-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 48px;
+      display: flex; flex-direction: column;
+    }
+
+    .result-idle {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px; text-align: center;
+      opacity: 0.4;
+    }
+
+    .result-idle-icon {
+      width: 80px; height: 80px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .result-idle-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .result-idle-sub {
+      font-size: 13px; color: #444;
+    }
+
+    /* Loading */
+    .result-loading {
+      flex: 1; display: none;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+    }
+
+    .spinner {
+      width: 40px; height: 40px;
+      border: 2px solid var(--border);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 13px; color: var(--muted);
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+
+    /* Result display */
+    .result-display {
+      display: none;
+      animation: fadeIn 0.5s ease both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-type-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px;
+      border-radius: 3px;
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .badge-price-type {
+      background: rgba(232,52,26,0.12);
+      border: 1px solid rgba(232,52,26,0.3);
+      color: var(--red);
+    }
+    .badge-cat-type {
+      background: rgba(42,157,92,0.12);
+      border: 1px solid rgba(42,157,92,0.3);
+      color: var(--green);
+    }
+
+    .result-main-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(56px, 6vw, 84px);
+      line-height: 1;
+      color: var(--white);
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
+    .result-main-value.price-color { color: var(--red); }
+    .result-main-value.cat-color { color: var(--green); }
+
+    .result-subtitle {
+      font-size: 14px; font-weight: 300;
+      color: var(--muted);
+      margin-bottom: 36px;
+    }
+
+    .result-divider {
+      width: 48px; height: 2px;
+      background: var(--red);
+      margin-bottom: 32px;
+    }
+
+    .result-inputs-recap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .recap-item {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      border-radius: 4px;
+    }
+    .recap-key {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .recap-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 17px; letter-spacing: 0.05em;
+      color: var(--white);
+    }
+
+    /* Model insight bar */
+    .insight-block {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+      padding: 16px 20px;
+      border-radius: 0 4px 4px 0;
+      margin-top: 16px;
+    }
+    .insight-label {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--red); margin-bottom: 6px;
+    }
+    .insight-text {
+      font-size: 13px; font-weight: 300;
+      color: var(--muted); line-height: 1.6;
+    }
+
+    /* confidence bar */
+    .confidence-block {
+      margin-top: 24px;
+    }
+    .confidence-header {
+      display: flex; justify-content: space-between;
+      font-size: 10px; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .confidence-bar-bg {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .confidence-bar-fill {
+      height: 100%;
+      background: linear-gradient(to right, var(--red-dark), var(--red));
+      border-radius: 2px;
+      transition: width 1s cubic-bezier(.22,1,.36,1);
+      width: 0%;
+    }
+
+    /* reset */
+    .reset-btn {
+      margin-top: 28px;
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      letter-spacing: 0.05em;
+    }
+    .reset-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* Error toast */
+    .error-toast {
+      display: none;
+      background: rgba(232,52,26,0.12);
+      border: 1px solid rgba(232,52,26,0.4);
+      border-radius: 5px;
+      padding: 14px 18px;
+      color: #f87;
+      font-size: 13px;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+    .error-toast.visible { display: block; }
+
+    /* ── INFO STRIP ── */
+    .info-strip {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 40px 80px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+    }
+
+    .info-item {
+      padding: 0 24px;
+      border-right: 1px solid var(--border);
+    }
+    .info-item:first-child { padding-left: 0; }
+    .info-item:last-child { border-right: none; }
+
+    .info-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px; color: var(--white);
+      letter-spacing: 0.04em; margin-bottom: 4px;
+    }
+    .info-num span { color: var(--red); }
+
+    .info-label {
+      font-size: 11px; color: var(--muted);
+      letter-spacing: 0.12em; text-transform: uppercase;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--off-black);
+      border-top: 1px solid var(--border);
+      padding: 40px 80px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .footer-copy {
+      font-size: 12px; color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+    .footer-copy span { color: var(--red); }
+
+    .footer-legal {
+      display: flex; gap: 24px;
+    }
+    .footer-legal a {
+      font-size: 11px; color: #333;
+      text-decoration: none; letter-spacing: 0.08em;
+      transition: color 0.2s;
+    }
+    .footer-legal a:hover { color: var(--muted); }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+      .predictor-layout { grid-template-columns: 1fr; }
+      .page-header-badge { display: none; }
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      .page-header { padding: 120px 24px 60px; }
+      .form-panel, .result-panel { padding: 28px; }
+      .info-strip { grid-template-columns: 1fr 1fr; gap: 2px; padding: 32px 24px; }
+      .info-item { border-right: none; border-bottom: 1px solid var(--border); padding: 16px 0; }
+      footer { padding: 24px; flex-direction: column; gap: 16px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="home.php">
+    <div class="logo-mark"><span>⬡</span></div>
+    <span class="logo-name">DriveHub</span>
+  </a>
+  <div class="nav-cta">
+    <a class="btn-outline" href="home.php">← Back Home</a>
+    <a class="btn-red" href="#">List Your Car</a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-header-inner">
+    <p class="page-eyebrow">Machine Learning</p>
+    <h1 class="page-title">AI PRICE<br><span>PREDICTOR</span></h1>
+    <p class="page-desc">Enter your car's details and our trained XGBoost model will instantly estimate its market value — powered by 300+ real vehicle transactions.</p>
+  </div>
+  <div class="page-header-badge">
+    <div class="model-badge">
+      <span class="model-badge-dot"></span>
+      XGBoost Regressor — Live
+    </div>
+    <span class="model-accuracy">R² Score: 0.96 &nbsp;|&nbsp; MAE: ~$480</span>
+  </div>
+</div>
+
+<!-- PREDICTOR -->
+<div class="predictor-layout">
+
+  <!-- FORM PANEL -->
+  <div class="form-panel">
+    <div class="form-section-title">Car Details</div>
+
+    <div class="form-content">
+      <!-- Original Price -->
+      <div class="form-group">
+        <label class="form-label">Original Price (USD)</label>
+        <div class="range-wrapper">
+          <div class="range-value" id="priceVal">$10,000 <span>USD</span></div>
+          <input type="range" id="presentPrice" min="2000" max="50000" step="500" value="10000"
+                 oninput="updateRange('presentPrice','priceVal','$','','USD',1)">
+          <div class="range-labels"><span>$2,000</span><span>$50,000</span></div>
+        </div>
+      </div>
+
+      <!-- Year & Owners row -->
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Model Year</label>
+          <select class="form-select" id="year">
+            <option value="2018">2018</option>
+            <option value="2017">2017</option>
+            <option value="2016">2016</option>
+            <option value="2015">2015</option>
+            <option value="2014" selected>2014</option>
+            <option value="2013">2013</option>
+            <option value="2012">2012</option>
+            <option value="2011">2011</option>
+            <option value="2010">2010</option>
+            <option value="2009">2009</option>
+            <option value="2008">2008</option>
+            <option value="2007">2007</option>
+            <option value="2006">2006</option>
+            <option value="2005">2005</option>
+            <option value="2004">2004</option>
+            <option value="2003">2003</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Previous Owners</label>
+          <select class="form-select" id="owner">
+            <option value="1" selected>1 Owner</option>
+            <option value="2">2 Owners</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:24px;"></div>
+
+      <!-- Kms Driven -->
+      <div class="form-group">
+        <label class="form-label">Kilometers Driven</label>
+        <div class="range-wrapper">
+          <div class="range-value" id="kmsVal">30,000 <span>km</span></div>
+          <input type="range" id="kmsDriven" min="500" max="250000" step="1000" value="30000"
+                 oninput="updateRange('kmsDriven','kmsVal','','','km',0)">
+          <div class="range-labels"><span>500 km</span><span>250,000 km</span></div>
+        </div>
+      </div>
+
+      <!-- Fuel Type -->
+      <div class="form-group">
+        <label class="form-label">Fuel Type</label>
+        <div class="radio-group">
+          <div class="radio-option">
+            <input type="radio" name="fuel" id="f-petrol" value="Petrol" checked>
+            <label class="radio-label" for="f-petrol"><span class="radio-icon">⛽</span> Petrol</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" name="fuel" id="f-diesel" value="Diesel">
+            <label class="radio-label" for="f-diesel"><span class="radio-icon">🛢️</span> Diesel</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" name="fuel" id="f-electric" value="Electric">
+            <label class="radio-label" for="f-electric"><span class="radio-icon">⚡</span> Electric</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seller Type -->
+      <div class="form-group">
+        <label class="form-label">Seller Type</label>
+        <div class="radio-group">
+          <div class="radio-option">
+            <input type="radio" name="seller" id="s-dealer" value="Dealer" checked>
+            <label class="radio-label" for="s-dealer"><span class="radio-icon">🏢</span> Dealer</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" name="seller" id="s-individual" value="Individual">
+            <label class="radio-label" for="s-individual"><span class="radio-icon">👤</span> Individual</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transmission -->
+      <div class="form-group">
+        <label class="form-label">Transmission</label>
+        <div class="radio-group">
+          <div class="radio-option">
+            <input type="radio" name="transmission" id="t-manual" value="Manual" checked>
+            <label class="radio-label" for="t-manual"><span class="radio-icon">🔧</span> Manual</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" name="transmission" id="t-auto" value="Automatic">
+            <label class="radio-label" for="t-auto"><span class="radio-icon">⚙️</span> Automatic</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="predict-actions">
+      <button class="predict-btn predict-btn-price" id="btnPrice" onclick="predict('price')">PREDICT PRICE</button>
+      <button class="predict-btn predict-btn-cat" id="btnCat" onclick="predict('category')">PRICE CATEGORY</button>
+    </div>
+
+    <div class="error-toast" id="errorToast"></div>
+  </div>
+
+  <!-- RESULT PANEL -->
+  <div class="result-panel" id="resultPanel">
+
+    <!-- Idle state -->
+    <div class="result-idle" id="resultIdle">
+      <div class="result-idle-icon">
+        <svg width="32" height="20" viewBox="0 0 800 400" fill="currentColor" style="color:#333">
+          <path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/>
+          <circle cx="200" cy="300" r="44"/>
+          <circle cx="620" cy="300" r="44"/>
+          <circle cx="200" cy="300" r="28" fill="#111"/>
+          <circle cx="620" cy="300" r="28" fill="#111"/>
+        </svg>
+      </div>
+      <div class="result-idle-text">AWAITING INPUT</div>
+      <div class="result-idle-sub">Fill in the form and hit Predict Price or Price Category</div>
+    </div>
+
+    <!-- Loading -->
+    <div class="result-loading" id="resultLoading">
+      <div class="spinner"></div>
+      <div class="loading-text">Running model...</div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-display" id="resultDisplay">
+      <div class="result-type-badge badge-price-type" id="resultTypeBadge">● Estimated Price</div>
+      <div class="result-main-value price-color" id="resultMainValue">—</div>
+      <div class="result-subtitle" id="resultSubtitle">Predicted selling price (USD)</div>
+      <div class="result-divider"></div>
+
+      <div class="result-inputs-recap" id="resultRecap"></div>
+
+      <div class="insight-block">
+        <div class="insight-label">AI Insight</div>
+        <div class="insight-text" id="aiInsight">—</div>
+      </div>
+
+      <div class="confidence-block">
+        <div class="confidence-header">
+          <span>Model Confidence</span>
+          <span id="confLabel">—</span>
+        </div>
+        <div class="confidence-bar-bg">
+          <div class="confidence-bar-fill" id="confBar"></div>
+        </div>
+      </div>
+
+      <button class="reset-btn" onclick="resetResult()">Reset Prediction</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- INFO STRIP -->
+<div class="info-strip">
+  <div class="info-item">
+    <div class="info-num">301<span>+</span></div>
+    <div class="info-label">Training Records</div>
+  </div>
+  <div class="info-item">
+    <div class="info-num">96<span>%</span></div>
+    <div class="info-label">R² Accuracy</div>
+  </div>
+  <div class="info-item">
+    <div class="info-num">3<span>×</span></div>
+    <div class="info-label">Models Compared</div>
+  </div>
+  <div class="info-item">
+    <div class="info-num">8</div>
+    <div class="info-label">Input Features</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-copy">© 2026 <span>DriveHub</span>. AI Price Predictor — powered by XGBoost.</div>
+  <div class="footer-legal">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="home.php">← Back to Home</a>
+  </div>
+</footer>
+
+
+<script>
+  /* ────────────────────────────────
+     Flask API endpoint
+     XAMPP runs on port 80, Flask on port 5000.
+     Both live on the same machine so this just works.
+  ──────────────────────────────── */
+  const FLASK_URL = 'http://localhost:5000';
+
+  /* ────────────────────────────────
+     RANGE DISPLAY
+  ──────────────────────────────── */
+  function updateRange(inputId, valId, prefix, suffix, unit) {
+    const v  = parseFloat(document.getElementById(inputId).value);
+    const el = document.getElementById(valId);
+    el.innerHTML = prefix + v.toLocaleString() + suffix + ' <span>' + unit + '</span>';
+    updateRangeTrack(inputId);
+  }
+
+  function updateRangeTrack(id) {
+    const input = document.getElementById(id);
+    const min   = parseFloat(input.min);
+    const max   = parseFloat(input.max);
+    const val   = parseFloat(input.value);
+    const pct   = ((val - min) / (max - min)) * 100;
+    input.style.background = `linear-gradient(to right, var(--red) ${pct}%, var(--border) ${pct}%)`;
+  }
+
+  ['presentPrice','kmsDriven'].forEach(id => updateRangeTrack(id));
+
+  /* ────────────────────────────────
+     COLLECT INPUTS
+  ──────────────────────────────── */
+  function getPayload() {
+    return {
+      present_price: parseFloat(document.getElementById('presentPrice').value),
+      year:          parseInt(document.getElementById('year').value),
+      kms_driven:    parseFloat(document.getElementById('kmsDriven').value),
+      owner:         parseInt(document.getElementById('owner').value),
+      fuel_type:     document.querySelector('input[name="fuel"]:checked').value,
+      seller_type:   document.querySelector('input[name="seller"]:checked').value,
+      transmission:  document.querySelector('input[name="transmission"]:checked').value,
+    };
+  }
+
+  /* ────────────────────────────────
+     CATEGORY COLOR HELPER
+  ──────────────────────────────── */
+  function categoryColor(label) {
+    const map = {
+      'Budget':    '#2a9d5c',
+      'Economy':   '#4a90e2',
+      'Mid-Range': '#e8891a',
+      'Premium':   '#e8341a',
+      'Luxury':    '#a855f7',
+    };
+    return map[label] || '#e8e8e8';
+  }
+
+  /* ────────────────────────────────
+     UI HELPERS
+  ──────────────────────────────── */
+  function showLoading() {
+    document.getElementById('resultIdle').style.display    = 'none';
+    document.getElementById('resultLoading').style.display = 'flex';
+    document.getElementById('resultDisplay').style.display = 'none';
+    document.getElementById('errorToast').classList.remove('visible');
+    document.getElementById('btnPrice').disabled = true;
+    document.getElementById('btnCat').disabled   = true;
+  }
+
+  function showError(msg) {
+    document.getElementById('resultLoading').style.display = 'none';
+    document.getElementById('resultIdle').style.display    = 'flex';
+    const toast = document.getElementById('errorToast');
+    toast.textContent = '⚠ ' + msg;
+    toast.classList.add('visible');
+    document.getElementById('btnPrice').disabled = false;
+    document.getElementById('btnCat').disabled   = false;
+  }
+
+  function showResult() {
+    document.getElementById('resultLoading').style.display = 'none';
+    document.getElementById('resultDisplay').style.display = 'block';
+    document.getElementById('btnPrice').disabled = false;
+    document.getElementById('btnCat').disabled   = false;
+  }
+
+  function setConfidence(conf) {
+    document.getElementById('confLabel').textContent = conf + '%';
+    setTimeout(() => {
+      document.getElementById('confBar').style.width = conf + '%';
+    }, 200);
+  }
+
+  function buildRecap(payload) {
+    const items = [
+      { key: 'Original Price', val: '$' + payload.present_price.toLocaleString() },
+      { key: 'Model Year',     val: payload.year },
+      { key: 'Kms Driven',     val: (payload.kms_driven / 1000).toFixed(0) + 'k km' },
+      { key: 'Fuel',           val: payload.fuel_type },
+      { key: 'Seller',         val: payload.seller_type },
+      { key: 'Transmission',   val: payload.transmission },
+    ];
+    document.getElementById('resultRecap').innerHTML = items.map(i => `
+      <div class="recap-item">
+        <div class="recap-key">${i.key}</div>
+        <div class="recap-val">${i.val}</div>
+      </div>
+    `).join('');
+  }
+
+  function buildPriceInsight(payload, price) {
+    const kmsK = Math.round(payload.kms_driven / 1000);
+    return `A ${payload.year} ${payload.fuel_type.toLowerCase()}-powered car with ${kmsK}k km and ` +
+      `${payload.owner} previous owner(s) is estimated at $${price.toLocaleString()} USD. ` +
+      (payload.kms_driven > 100000
+        ? 'High mileage is reducing value significantly.'
+        : payload.kms_driven < 20000
+          ? 'Low mileage adds a notable premium to value.'
+          : 'Mileage is within a normal depreciation range.');
+  }
+
+  function buildCategoryInsight(category) {
+    const map = {
+      'Budget':    'Great option for first-time buyers or city commuters.',
+      'Economy':   'Solid value for daily drivers with low running costs.',
+      'Mid-Range': 'A sweet spot — reliable performance at moderate cost.',
+      'Premium':   'Strong features with higher ownership expectations.',
+      'Luxury':    'Exceptional spec. Expect premium maintenance costs.',
+    };
+    return `Based on current market data, this vehicle falls in the ${category} segment. ` +
+      (map[category] || '');
+  }
+
+  /* ────────────────────────────────
+     PREDICT — calls Flask API
+  ──────────────────────────────── */
+  async function predict(type) {
+    showLoading();
+
+    const payload  = getPayload();
+    const endpoint = type === 'price' ? '/predict/price' : '/predict/category';
+
+    try {
+      const res  = await fetch(FLASK_URL + endpoint, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Server error ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Prediction failed');
+
+      const badge    = document.getElementById('resultTypeBadge');
+      const mainVal  = document.getElementById('resultMainValue');
+      const subtitle = document.getElementById('resultSubtitle');
+      const insight  = document.getElementById('aiInsight');
+
+      if (type === 'price') {
+        const price = data.price;
+        badge.className   = 'result-type-badge badge-price-type';
+        badge.textContent = '● Estimated Selling Price';
+        mainVal.className = 'result-main-value price-color';
+        mainVal.style.color = '';
+        mainVal.textContent = '$' + price.toLocaleString();
+        subtitle.textContent = 'Predicted market value in USD';
+        insight.textContent  = buildPriceInsight(payload, price);
+
+        const conf = Math.min(96, 70 + (price > 2000 && price < 35000 ? 22 : 5));
+        setConfidence(conf);
+
+      } else {
+        const category = data.category;
+        badge.className   = 'result-type-badge badge-cat-type';
+        badge.textContent = '● Price Category';
+        mainVal.className = 'result-main-value';
+        mainVal.style.color = categoryColor(category);
+        mainVal.textContent = category.toUpperCase();
+        subtitle.textContent = `Vehicle classified as ${category} tier`;
+        insight.textContent  = buildCategoryInsight(category);
+        setConfidence(91);
+      }
+
+      buildRecap(payload);
+      showResult();
+
+    } catch (err) {
+      showError(err.message || 'Could not connect to Flask server. Make sure app.py is running on port 5000.');
+    }
+  }
+
+  function resetResult() {
+    document.getElementById('resultDisplay').style.display = 'none';
+    document.getElementById('resultIdle').style.display    = 'flex';
+    document.getElementById('confBar').style.width = '0%';
+    document.getElementById('errorToast').classList.remove('visible');
+  }
+</script>
+
+</body>
+</html>

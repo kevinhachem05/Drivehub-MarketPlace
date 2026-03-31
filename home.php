@@ -47,7 +47,7 @@ ob_end_flush();
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--red); }
 
-    /* NAV */
+    /* ── NAV ── */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
@@ -57,17 +57,25 @@ ob_end_flush();
       border-bottom: 1px solid var(--border);
     }
     .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .logo-mark {
-      width: 32px; height: 32px; background: var(--red);
-      clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%);
-      display: flex; align-items: center; justify-content: center;
-    }
+    .logo-mark { width: 32px; height: 32px; background: var(--red); clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%); display: flex; align-items: center; justify-content: center; }
     .logo-mark span { font-size: 13px; color:#fff; font-weight:700; margin-bottom:5px; }
     .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em; color: var(--white); }
     .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
     .nav-links a { font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; }
     .nav-links a:hover { color: var(--white); }
     .nav-links a.active { color: var(--red); }
+    .nav-links a.nav-ai {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--red);
+      padding: 5px 12px;
+      border: 1px solid rgba(232,52,26,0.3);
+      border-radius: 4px;
+      background: rgba(232,52,26,0.06);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .nav-links a.nav-ai:hover { background: rgba(232,52,26,0.14); border-color: rgba(232,52,26,0.5); color: var(--red); }
+    .nav-ai-dot { width: 5px; height: 5px; background: var(--red); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
     .nav-cta { display: flex; align-items: center; gap: 12px; }
     .welcome { font-size: 13px; color: var(--muted); }
     .btn-outline { padding: 9px 20px; background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: border-color 0.2s, background 0.2s; text-decoration: none; }
@@ -79,7 +87,7 @@ ob_end_flush();
     .nav-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #fff; flex-shrink: 0; }
     .nav-profile-name { font-size: 13px; font-weight: 500; color: var(--text); }
 
-    /* HERO */
+    /* ── HERO ── */
     .hero { position: relative; height: 100vh; min-height: 600px; display: flex; align-items: flex-start; overflow: hidden; }
     .hero-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 40%, #2a1510 100%); }
     .hero-car { position: absolute; right: -40px; bottom: 0; width: 65%; opacity: 0.07; pointer-events: none; }
@@ -105,7 +113,7 @@ ob_end_flush();
     .hero-stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
     .hero-stat-divider { width: 40px; height: 1px; background: var(--red); margin-left: auto; margin-top: 6px; }
 
-    /* SECTIONS */
+    /* ── SECTIONS ── */
     section { padding: 100px 80px; }
     .section-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
     .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 4vw, 56px); color: var(--white); letter-spacing: 0.03em; line-height: 1; }
@@ -113,10 +121,10 @@ ob_end_flush();
     .view-all { font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; white-space: nowrap; }
     .view-all:hover { color: var(--red); border-color: var(--red); }
 
-    /* CATEGORIES */
+    /* ── CATEGORIES ── */
     #categories { background: var(--off-black); padding: 80px; }
 
-    /* CAR GRID */
+    /* ── CAR GRID ── */
     .car-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2px; }
     .car-card { background: var(--card); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: border-color 0.25s, transform 0.25s; position: relative; }
     .car-card:hover { border-color: var(--red); transform: translateY(-3px); z-index: 2; }
@@ -144,16 +152,16 @@ ob_end_flush();
     .car-btn:hover { background: var(--red); border-color: var(--red); color: #fff; }
     .car-location { font-size: 11px; color: var(--muted); margin-top: 10px; display: flex; align-items: center; gap: 5px; }
 
-    /* EMPTY STATE */
+    /* ── EMPTY STATE ── */
     .empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 40px; border: 1px dashed rgba(255,255,255,0.08); text-align: center; }
     .empty-state-icon { opacity: 0.15; margin-bottom: 20px; }
     .empty-state-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
     .empty-state-desc { font-size: 13px; color: #333; font-weight: 300; }
 
-    /* FEATURED */
+    /* ── FEATURED ── */
     #featured { background: var(--black); }
     .featured-grid { display: grid; grid-template-columns: 1.6fr 1fr; grid-template-rows: auto auto; gap: 2px; }
-    .featured-main { grid-row: 1 / 3; background: var(--card); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: border-color 0.25s; position: relative; }
+    .featured-main { grid-row: 1 / 3; background: var(--card); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: border-color 0.25s; position: relative; min-height: 100%; display: flex; flex-direction: column; }
     .featured-main:hover { border-color: var(--red); }
     .featured-main .car-img { aspect-ratio: 4/3; }
     .featured-tag { position: absolute; top: 0; left: 0; background: var(--red); padding: 8px 18px; font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.15em; color: #fff; }
@@ -163,7 +171,7 @@ ob_end_flush();
     .featured-side:hover { border-color: var(--red); }
     .featured-side .car-img { aspect-ratio: 16/9; }
 
-    /* BRANDS */
+    /* ── BRANDS ── */
     .brands-strip { background: var(--panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 32px 80px; overflow: hidden; }
     .brands-label { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: #333; margin-bottom: 20px; }
     .brands-scroll { display: flex; gap: 48px; align-items: center; animation: scrollBrands 28s linear infinite; width: max-content; }
@@ -171,7 +179,103 @@ ob_end_flush();
     .brand-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.1em; color: #2a2a2a; white-space: nowrap; transition: color 0.2s; }
     .brand-name:hover { color: var(--red); }
 
-    /* WHY US */
+    /* ── AI PREDICTOR SECTION ── */
+    #ai-predictor {
+      background: var(--black);
+      padding: 100px 80px;
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+    }
+    #ai-predictor::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 55%; height: 100%;
+      background: radial-gradient(ellipse at 80% 50%, rgba(232,52,26,0.065) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    #ai-predictor::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(255,255,255,0.008) 40px, rgba(255,255,255,0.008) 41px);
+      pointer-events: none;
+    }
+    .ai-inner {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr;
+  gap: 72px;
+  align-items: start; /* ✅ THIS LINE fixes the alignment */
+}
+    .ai-left {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .ai-right {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .ai-model-stat {
+      display: flex; gap: 32px;
+      margin-top: 32px; padding-top: 28px;
+      border-top: 1px solid var(--border);
+    }
+    .ai-stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px; color: var(--white); letter-spacing: 0.04em;
+    }
+    .ai-stat-num span { color: var(--red); }
+    .ai-stat-label {
+      font-size: 10px; color: var(--muted);
+      letter-spacing: 0.15em; text-transform: uppercase; margin-top: 3px;
+    }
+    .ai-cta-block {
+      display: flex; align-items: center; gap: 20px;
+      margin-top: 40px;
+    }
+    .ai-cta-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 36px;
+      background: var(--red); border: none; border-radius: 6px;
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px; letter-spacing: 0.12em;
+      cursor: pointer; text-decoration: none;
+      position: relative; overflow: hidden;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .ai-cta-btn::after { content:''; position:absolute; inset:0; background: linear-gradient(to right, transparent, rgba(255,255,255,0.12), transparent); transform: translateX(-100%); transition: transform 0.5s; }
+    .ai-cta-btn:hover { background: var(--red-dark); }
+    .ai-cta-btn:hover::after { transform: translateX(100%); }
+    .ai-cta-btn:active { transform: scale(0.98); }
+    .ai-cta-note { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.65; }
+    .ai-right { display: flex; flex-direction: column; gap: 2px; }
+    .ai-feature-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 22px 26px;
+      display: flex; align-items: flex-start; gap: 16px;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .ai-feature-card {
+  min-height: 125px;   /* 🔥 increase height */
+  padding: 30px 30px;  /* 🔥 bigger inside spacing */
+}
+    .ai-feature-card:hover { border-color: rgba(232,52,26,0.3); background: #181818; }
+    .ai-feature-icon {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: rgba(232,52,26,0.1);
+      border: 1px solid rgba(232,52,26,0.2);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--red);
+    }
+    .ai-feature-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 4px; }
+    .ai-feature-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; }
+
+    /* ── WHY US ── */
     #why { background: var(--off-black); }
     .why-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; border: 1px solid var(--border); }
     .why-card { padding: 40px 32px; background: var(--panel); border-right: 1px solid var(--border); transition: background 0.2s; }
@@ -181,7 +285,7 @@ ob_end_flush();
     .why-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 10px; }
     .why-desc { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; }
 
-    /* NEWSLETTER */
+    /* ── NEWSLETTER ── */
     .newsletter { background: var(--black); padding: 80px; border-top: 1px solid var(--border); }
     .newsletter-inner { max-width: 600px; margin: 0 auto; text-align: center; }
     .newsletter .section-eyebrow { display: block; margin-bottom: 10px; }
@@ -194,7 +298,7 @@ ob_end_flush();
     .newsletter-btn { padding: 14px 28px; background: var(--red); border: none; border-radius: 0 6px 6px 0; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.12em; cursor: pointer; transition: background 0.2s; }
     .newsletter-btn:hover { background: var(--red-dark); }
 
-    /* FOOTER */
+    /* ── FOOTER ── */
     footer { background: var(--panel); border-top: 1px solid var(--border); padding: 56px 80px 32px; }
     .footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 48px; }
     .footer-brand p { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; margin-top: 14px; max-width: 240px; }
@@ -209,7 +313,7 @@ ob_end_flush();
     .footer-legal a { font-size: 12px; color: #333; text-decoration: none; transition: color 0.2s; }
     .footer-legal a:hover { color: var(--muted); }
 
-    /* MODAL */
+    /* ── MODAL ── */
     .modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
     .modal-overlay.open { opacity: 1; pointer-events: all; }
     .modal { background: var(--panel); border: 1px solid var(--border); width: 90%; max-width: 760px; max-height: 90vh; overflow-y: auto; border-radius: 4px; transform: translateY(20px); transition: transform 0.3s; position: relative; }
@@ -235,11 +339,12 @@ ob_end_flush();
     .modal-btn-sec { padding: 13px 20px; background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
     .modal-btn-sec:hover { border-color: var(--border-hover); background: #1c1c1c; }
 
-    /* RESPONSIVE */
+    /* ── RESPONSIVE ── */
     @media (max-width: 1100px) {
       .featured-grid { grid-template-columns: 1fr 1fr; }
       .why-grid { grid-template-columns: repeat(2,1fr); }
       .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+      .ai-inner { grid-template-columns: 1fr; gap: 48px; }
     }
     @media (max-width: 768px) {
       nav { padding: 0 24px; }
@@ -252,12 +357,17 @@ ob_end_flush();
       .footer-top { grid-template-columns: 1fr; }
       .modal-specs { grid-template-columns: repeat(2,1fr); }
       .brands-strip { padding: 24px; }
+      #ai-predictor { padding: 60px 24px; }
+      .ai-model-stat { gap: 20px; }
+      .ai-cta-block { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
 
-<!-- NAV -->
+<!-- ══════════════════════════════════════
+     NAV
+══════════════════════════════════════ -->
 <nav>
   <a href="#" class="nav-logo">
     <div class="logo-mark"><span>⬡</span></div>
@@ -268,6 +378,7 @@ ob_end_flush();
     <li><a href="#categories">Categories</a></li>
     <li><a href="#featured">Featured</a></li>
     <li><a href="#why">Why Us</a></li>
+    <li><a href="predictor.html" style="color: var(--red) !important;">AI Predictor ✦</a></li>
     <li><a href="#">Contact</a></li>
   </ul>
   <div class="nav-cta">
@@ -279,7 +390,9 @@ ob_end_flush();
   </div>
 </nav>
 
-<!-- HERO -->
+<!-- ══════════════════════════════════════
+     HERO
+══════════════════════════════════════ -->
 <section class="hero">
   <div class="hero-bg"></div>
   <div class="hero-lines"></div>
@@ -307,7 +420,9 @@ ob_end_flush();
   </div>
 </section>
 
-<!-- BRANDS STRIP -->
+<!-- ══════════════════════════════════════
+     BRANDS STRIP
+══════════════════════════════════════ -->
 <div class="brands-strip">
   <div class="brands-label">Trusted brands on DriveHub</div>
   <div class="brands-scroll">
@@ -316,7 +431,9 @@ ob_end_flush();
   </div>
 </div>
 
-<!-- CATEGORIES — DB ONLY -->
+<!-- ══════════════════════════════════════
+     CATEGORIES — DB ONLY
+══════════════════════════════════════ -->
 <section id="categories">
   <div class="section-header">
     <div>
@@ -385,7 +502,9 @@ ob_end_flush();
   </div>
 </section>
 
-<!-- FEATURED -->
+<!-- ══════════════════════════════════════
+     FEATURED
+══════════════════════════════════════ -->
 <section id="featured">
   <div class="section-header">
     <div><p class="section-eyebrow">Editor's Picks</p><h2 class="section-title">FEATURED THIS WEEK</h2></div>
@@ -408,7 +527,93 @@ ob_end_flush();
   </div>
 </section>
 
-<!-- WHY US -->
+<!-- ══════════════════════════════════════
+     AI PRICE PREDICTOR
+══════════════════════════════════════ -->
+<section id="ai-predictor">
+  <div class="ai-inner">
+
+    <!-- Left: Copy + Stats + CTA -->
+    <div class="ai-left">
+      <p class="section-eyebrow">Machine Learning</p>
+      <h2 class="section-title">KNOW YOUR<br>CAR'S <span style="color:var(--red)">TRUE WORTH</span></h2>
+      <p style="font-size:15px;font-weight:300;color:rgba(255,255,255,0.45);line-height:1.7;margin-top:20px;max-width:440px;">
+        Our AI model — trained on 300+ real vehicle transactions using XGBoost regression — delivers instant, data-driven price estimates. Enter any car's specs and get a market value in seconds.
+      </p>
+
+      <div class="ai-model-stat">
+        <div>
+          <div class="ai-stat-num">96<span>%</span></div>
+          <div class="ai-stat-label">R² Accuracy</div>
+        </div>
+        <div>
+          <div class="ai-stat-num">301<span>+</span></div>
+          <div class="ai-stat-label">Training Records</div>
+        </div>
+        <div>
+          <div class="ai-stat-num">3</div>
+          <div class="ai-stat-label">Models Compared</div>
+        </div>
+      </div>
+
+      <div class="ai-cta-block">
+        <a href="predictor.html" class="ai-cta-btn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 8v4l3 3"/></svg>
+          TRY THE PREDICTOR
+        </a>
+        <div class="ai-cta-note">Free · No signup required<br>Instant estimate in seconds</div>
+      </div>
+    </div>
+
+    <!-- Right: Feature cards -->
+    <div class="ai-right">
+      <div class="ai-feature-card">
+        <div class="ai-feature-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg>
+        </div>
+        <div>
+          <div class="ai-feature-title">XGBoost Regressor</div>
+          <div class="ai-feature-desc">The winning model from a 3-way comparison — selected for highest R² and lowest mean absolute error on the test set.</div>
+        </div>
+      </div>
+
+      <div class="ai-feature-card">
+        <div class="ai-feature-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <div>
+          <div class="ai-feature-title">8 Smart Inputs</div>
+          <div class="ai-feature-desc">Year, original price, mileage, fuel type, transmission, seller type, and ownership history — all weighted by real market patterns.</div>
+        </div>
+      </div>
+
+      <div class="ai-feature-card">
+        <div class="ai-feature-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div>
+          <div class="ai-feature-title">Dual Prediction Mode</div>
+          <div class="ai-feature-desc">Get an exact USD price or a market tier (Budget → Luxury) — with a confidence bar and contextual AI insight on every result.</div>
+        </div>
+      </div>
+
+      <div class="ai-feature-card">
+        <div class="ai-feature-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="ai-feature-title">Built for DriveHub</div>
+          <div class="ai-feature-desc">Trained on Lebanese-market USD prices. Not a generic tool — a model calibrated to the vehicles and valuations you actually see here.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     WHY US
+══════════════════════════════════════ -->
 <section id="why">
   <div class="section-header"><div><p class="section-eyebrow">Why DriveHub</p><h2 class="section-title">THE DRIVEHUB DIFFERENCE</h2></div></div>
   <div class="why-grid">
@@ -419,7 +624,9 @@ ob_end_flush();
   </div>
 </section>
 
-<!-- NEWSLETTER -->
+<!-- ══════════════════════════════════════
+     NEWSLETTER
+══════════════════════════════════════ -->
 <div class="newsletter">
   <div class="newsletter-inner">
     <span class="section-eyebrow">Stay in the Loop</span>
@@ -432,7 +639,9 @@ ob_end_flush();
   </div>
 </div>
 
-<!-- FOOTER -->
+<!-- ══════════════════════════════════════
+     FOOTER
+══════════════════════════════════════ -->
 <footer>
   <div class="footer-top">
     <div class="footer-brand">
@@ -441,7 +650,7 @@ ob_end_flush();
     </div>
     <div><div class="footer-col-title">Browse</div><ul class="footer-links"><li><a href="#">4X4 / SUV</a></li><li><a href="#">2 Doors</a></li><li><a href="#">Sedan</a></li><li><a href="#">Bus & Van</a></li><li><a href="#">Motorcycles</a></li><li><a href="#">Electric</a></li></ul></div>
     <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="#">About Us</a></li><li><a href="#">How It Works</a></li><li><a href="#">List Your Car</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li></ul></div>
-    <div><div class="footer-col-title">Support</div><ul class="footer-links"><li><a href="#">Help Center</a></li><li><a href="#">Contact Us</a></li><li><a href="#">Buyer Guide</a></li><li><a href="#">Seller Guide</a></li><li><a href="#">Report an Issue</a></li></ul></div>
+    <div><div class="footer-col-title">Support</div><ul class="footer-links"><li><a href="#">Help Center</a></li><li><a href="#">Contact Us</a></li><li><a href="#">Buyer Guide</a></li><li><a href="#">Seller Guide</a></li><li><a href="#">Report an Issue</a></li><li><a href="predictor.html">AI Predictor</a></li></ul></div>
   </div>
   <div class="footer-bottom">
     <div class="footer-copy">© 2026 <span>DriveHub</span>. All rights reserved.</div>
@@ -449,7 +658,9 @@ ob_end_flush();
   </div>
 </footer>
 
-<!-- MODAL -->
+<!-- ══════════════════════════════════════
+     MODAL
+══════════════════════════════════════ -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal" id="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>

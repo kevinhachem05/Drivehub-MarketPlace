@@ -206,7 +206,7 @@ ob_end_flush();
     <span class="nav-badge">User Management</span>
   </div>
   <div class="nav-right">
-    <a href="logout.php" class="btn-outline">Sign Out</a>
+    <a href="logout.php" class="btn-outline">Log Out</a>
     <a href="#" class="nav-profile">
       <div class="nav-avatar"><?php echo strtoupper(mb_substr($_SESSION['first_name'], 0, 1)); ?></div>
       <span class="nav-profile-name"><?php echo htmlspecialchars($_SESSION['first_name']); ?></span>

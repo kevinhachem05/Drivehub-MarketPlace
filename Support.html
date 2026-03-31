@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Support — DriveHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:    #0a0a0a;
+      --off-black:#111111;
+      --panel:    #161616;
+      --card:     #1a1a1a;
+      --border:   rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.18);
+      --muted:    #666;
+      --text:     #e8e8e8;
+      --white:    #ffffff;
+      --red:      #e8341a;
+      --red-dark: #c0290e;
+      --input-bg: #1c1c1c;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--off-black); }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+    .btn-red { display: inline-block; padding: 9px 22px; background: var(--red); border: none; border-radius: 5px; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.1em; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+    .btn-red:hover { background: var(--red-dark); }
+    /* LOGO BAR */
+    .logo-bar { display: flex; align-items: center; padding: 0 56px; height: 68px; background: rgba(10,10,10,0.95); border-bottom: 1px solid var(--border); }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width: 32px; height: 32px; background: var(--red); clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%); display: flex; align-items: center; justify-content: center; }
+    .logo-mark span { font-size: 13px; color:#fff; font-weight:700; margin-bottom:5px; }
+    .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em; color: var(--white); }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width: 32px; height: 32px; background: var(--red); clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%); display: flex; align-items: center; justify-content: center; }
+    .logo-mark span { font-size: 13px; color:#fff; font-weight:700; margin-bottom:5px; }
+    .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em; color: var(--white); }
+
+    .page-hero { padding: 60px 80px 80px; position: relative; overflow: hidden; border-bottom: 1px solid var(--border); }
+    .page-hero::before { content:''; position:absolute; inset:0; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 40%, #2a1510 100%); }
+    .page-hero::after { content:''; position:absolute; inset:0; background-image: repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(255,255,255,0.012) 40px, rgba(255,255,255,0.012) 41px); }
+    .page-hero-content { position: relative; z-index: 2; animation: slideUp 0.9s cubic-bezier(.22,1,.36,1) 0.1s both; }
+    @keyframes slideUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+    .page-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; color: var(--red); margin-bottom: 16px; }
+    .page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 7vw, 100px); line-height: 0.9; color: var(--white); letter-spacing: 0.02em; }
+    .page-title span { color: var(--red); }
+    .page-desc { margin-top: 24px; font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.45); max-width: 520px; line-height: 1.7; }
+
+    /* QUICK LINKS */
+    .quick-links { display: flex; gap: 2px; background: var(--panel); border-bottom: 1px solid var(--border); padding: 0 80px; }
+    .quick-link { padding: 18px 0; margin-right: 36px; font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; }
+    .quick-link:hover { color: var(--white); border-bottom-color: var(--border-hover); }
+    .quick-link.ql-active { color: var(--red); border-bottom-color: var(--red); }
+
+    section { padding: 80px; }
+    .section-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 4vw, 52px); color: var(--white); letter-spacing: 0.03em; line-height: 1; }
+
+    /* HELP CENTER */
+    #help { background: var(--black); }
+    .faq-search { display: flex; gap: 0; max-width: 540px; margin: 40px 0; }
+    .faq-search-input { flex: 1; padding: 14px 18px; background: var(--input-bg); border: 1px solid var(--border); border-right: none; border-radius: 6px 0 0 6px; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .faq-search-input::placeholder { color: #444; }
+    .faq-search-input:focus { border-color: var(--red); }
+    .faq-search-btn { padding: 14px 24px; background: var(--red); border: none; border-radius: 0 6px 6px 0; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; }
+    .faq-search-btn:hover { background: var(--red-dark); }
+    .faq-cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 48px; }
+    .faq-cat { background: var(--panel); border: 1px solid var(--border); padding: 28px 24px; text-align: center; cursor: pointer; transition: border-color 0.25s, background 0.25s; }
+    .faq-cat:hover { border-color: rgba(232,52,26,0.3); background: #181818; }
+    .faq-cat-icon { color: var(--red); margin-bottom: 12px; }
+    .faq-cat-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 4px; }
+    .faq-cat-count { font-size: 11px; color: var(--muted); }
+    .faq-list { display: flex; flex-direction: column; gap: 1px; }
+    .faq-item { background: var(--panel); border: 1px solid var(--border); }
+    .faq-q { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; cursor: pointer; transition: background 0.2s; }
+    .faq-q:hover { background: #1a1a1a; }
+    .faq-q-text { font-size: 14px; font-weight: 500; color: var(--text); }
+    .faq-toggle { color: var(--red); font-size: 20px; transition: transform 0.2s; flex-shrink: 0; }
+    .faq-item.open .faq-toggle { transform: rotate(45deg); }
+    .faq-a { display: none; padding: 0 24px 20px; font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.8; border-top: 1px solid var(--border); padding-top: 16px; }
+    .faq-item.open .faq-a { display: block; }
+
+    /* CONTACT */
+    #contact { background: var(--off-black); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; margin-top: 48px; align-items: start; }
+    .contact-methods { display: flex; flex-direction: column; gap: 2px; }
+    .contact-method { background: var(--panel); border: 1px solid var(--border); padding: 28px 24px; display: flex; align-items: center; gap: 18px; transition: border-color 0.25s; }
+    .contact-method:hover { border-color: rgba(232,52,26,0.3); }
+    .cm-icon { width: 44px; height: 44px; flex-shrink: 0; background: rgba(232,52,26,0.1); border: 1px solid rgba(232,52,26,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--red); }
+    .cm-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 3px; }
+    .cm-detail { font-size: 13px; font-weight: 300; color: var(--muted); }
+    .cm-badge { display: inline-block; margin-top: 6px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #2a9d5c; background: rgba(42,157,92,0.1); border: 1px solid rgba(42,157,92,0.25); padding: 2px 8px; border-radius: 3px; }
+    .contact-form { background: var(--panel); border: 1px solid var(--border); padding: 36px; }
+    .form-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 24px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-label { font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+    .form-input, .form-select, .form-textarea { padding: 12px 16px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 5px; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; width: 100%; }
+    .form-input::placeholder, .form-textarea::placeholder { color: #444; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--red); }
+    .form-select { cursor: pointer; }
+    .form-select option { background: var(--card); }
+    .form-textarea { resize: vertical; min-height: 120px; }
+    .form-submit { width: 100%; padding: 14px; background: var(--red); border: none; border-radius: 6px; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.12em; cursor: pointer; transition: background 0.2s; margin-top: 8px; }
+    .form-submit:hover { background: var(--red-dark); }
+
+    /* BUYER GUIDE */
+    #buyer { background: var(--black); }
+    .guide-steps { display: flex; flex-direction: column; gap: 2px; margin-top: 48px; }
+    .guide-step { display: grid; grid-template-columns: 72px 1fr; gap: 32px; background: var(--panel); border: 1px solid var(--border); padding: 32px 28px; transition: border-color 0.25s; }
+    .guide-step:hover { border-color: rgba(232,52,26,0.3); }
+    .step-num { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: rgba(232,52,26,0.25); letter-spacing: 0.04em; line-height: 1; padding-top: 4px; }
+    .step-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 8px; }
+    .step-desc { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; }
+    .step-tip { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 11px; color: var(--red); background: rgba(232,52,26,0.08); border: 1px solid rgba(232,52,26,0.2); padding: 4px 10px; border-radius: 3px; }
+
+    /* SELLER GUIDE */
+    #seller { background: var(--off-black); }
+    .seller-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 48px; }
+    .seller-card { background: var(--panel); border: 1px solid var(--border); padding: 32px 28px; transition: border-color 0.25s, background 0.25s; }
+    .seller-card:hover { border-color: rgba(232,52,26,0.3); background: #181818; }
+    .seller-icon { width: 44px; height: 44px; background: rgba(232,52,26,0.1); border: 1px solid rgba(232,52,26,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: var(--red); }
+    .seller-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 10px; }
+    .seller-desc { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; }
+    .seller-cta { margin-top: 40px; background: var(--panel); border: 1px solid var(--border); padding: 36px; display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+    .seller-cta-text h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.04em; color: var(--white); margin-bottom: 8px; }
+    .seller-cta-text p { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; }
+
+    /* REPORT */
+    #report { background: var(--black); }
+    .report-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin: 40px 0; }
+    .report-type { background: var(--panel); border: 1px solid var(--border); padding: 24px; cursor: pointer; transition: border-color 0.25s, background 0.25s; }
+    .report-type.selected { border-color: var(--red); background: rgba(232,52,26,0.05); }
+    .report-type:hover { border-color: rgba(232,52,26,0.3); }
+    .rt-icon { color: var(--red); margin-bottom: 10px; }
+    .rt-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 4px; }
+    .rt-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; }
+    .report-form { background: var(--panel); border: 1px solid var(--border); padding: 36px; max-width: 680px; }
+    .report-warning { display: flex; align-items: flex-start; gap: 12px; background: rgba(232,52,26,0.08); border: 1px solid rgba(232,52,26,0.2); padding: 16px; border-radius: 4px; margin-bottom: 24px; }
+    .report-warning-icon { color: var(--red); flex-shrink: 0; margin-top: 1px; }
+    .report-warning-text { font-size: 13px; font-weight: 300; color: rgba(255,255,255,0.6); line-height: 1.6; }
+
+    footer { background: var(--panel); border-top: 1px solid var(--border); padding: 56px 80px 32px; }
+    .footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 48px; }
+    .footer-brand p { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; margin-top: 14px; max-width: 240px; }
+    .footer-col-title { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.15em; color: var(--white); margin-bottom: 16px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 13px; font-weight: 300; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--red); }
+    .footer-bottom { display: flex; align-items: center; justify-content: space-between; padding-top: 24px; border-top: 1px solid var(--border); }
+    .footer-copy { font-size: 12px; color: #333; }
+    .footer-copy span { color: var(--red); }
+    .footer-legal { display: flex; gap: 20px; }
+    .footer-legal a { font-size: 12px; color: #333; text-decoration: none; transition: color 0.2s; }
+    .footer-legal a:hover { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="logo-bar">
+  <a class="nav-logo" href="home.php">
+    <div class="logo-mark"><span>⬡</span></div>
+    <span class="logo-name">DriveHub</span>
+  </a>
+</div>
+
+<div class="page-hero">
+  <div class="page-hero-content">
+    <p class="page-eyebrow">Support Center</p>
+    <h1 class="page-title">WE'RE HERE<br>TO <span>HELP.</span></h1>
+    <p class="page-desc">Find answers, reach our team, or learn how to buy and sell with confidence. DriveHub support is available 7 days a week.</p>
+  </div>
+</div>
+
+<!-- QUICK NAV -->
+<div class="quick-links">
+  <a href="#help" class="quick-link ql-active">Help Center</a>
+  <a href="#contact" class="quick-link">Contact Us</a>
+  <a href="#buyer" class="quick-link">Buyer Guide</a>
+  <a href="#seller" class="quick-link">Seller Guide</a>
+  <a href="#report" class="quick-link">Report an Issue</a>
+</div>
+
+<!-- ══════════════ HELP CENTER ══════════════ -->
+<section id="help">
+  <p class="section-eyebrow">FAQ</p>
+  <h2 class="section-title">HELP CENTER</h2>
+
+  <div class="faq-search">
+    <input class="faq-search-input" type="text" placeholder="Search your question…"/>
+    <button class="faq-search-btn">SEARCH</button>
+  </div>
+
+  <div class="faq-cats">
+    <div class="faq-cat">
+      <div class="faq-cat-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
+      <div class="faq-cat-title">Buying</div>
+      <div class="faq-cat-count">12 articles</div>
+    </div>
+    <div class="faq-cat">
+      <div class="faq-cat-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+      <div class="faq-cat-title">Selling</div>
+      <div class="faq-cat-count">9 articles</div>
+    </div>
+    <div class="faq-cat">
+      <div class="faq-cat-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+      <div class="faq-cat-title">Payments</div>
+      <div class="faq-cat-count">7 articles</div>
+    </div>
+    <div class="faq-cat">
+      <div class="faq-cat-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="faq-cat-title">Safety</div>
+      <div class="faq-cat-count">8 articles</div>
+    </div>
+  </div>
+
+  <div class="faq-list">
+    <div class="faq-item open">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How does DriveHub verify listings?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">Every listing goes through a 50-point inspection by one of our certified inspectors. We verify the vehicle's condition, history, mileage, and documentation before it goes live. Sellers also go through ID verification so you always know who you're dealing with.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">What is the 7-day buyer guarantee?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">If the car you purchased isn't as described in the listing — different condition, undisclosed damage, or inaccurate mileage — you can request a full refund within 7 days of delivery. Contact our support team and we'll handle the rest.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How does escrow payment work?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">When you pay for a car, your money is held securely in escrow — not released to the seller until you confirm receipt and satisfaction. This protects you from fraud and ensures the seller delivers exactly what was advertised.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How long does delivery take?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">Delivery timelines vary by location. Within Beirut and the Greater Beirut area, delivery typically takes 1–2 business days. Nationwide delivery to all governorates takes 2–5 business days via our licensed transport partners.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How do I list my car for sale?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">Listing is free and takes about 10 minutes. Create an account, complete ID verification, fill in your vehicle details, upload photos, and set your price. One of our inspectors will contact you to schedule the 50-point verification before your listing goes live.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">What fees does DriveHub charge sellers?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">Listing is completely free. DriveHub charges a 2.5% success fee only when your car sells — no upfront costs, no monthly fees. Premium placement and featured listings are available for an optional fee.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Is the AI Price Predictor accurate?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">Our predictor achieves 96% R² accuracy and is trained on 300+ real Lebanese-market transactions. It's the most reliable price estimation tool for the local market, though actual prices may vary based on condition, negotiation, and timing.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CONTACT ══════════════ -->
+<section id="contact">
+  <p class="section-eyebrow">Reach Us</p>
+  <h2 class="section-title">CONTACT US</h2>
+  <div class="contact-grid">
+    <div class="contact-methods">
+      <div class="contact-method">
+        <div class="cm-icon"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <div>
+          <div class="cm-title">Email Support</div>
+          <div class="cm-detail">support@drivehub.lb</div>
+          <div class="cm-badge">Replies within 4 hours</div>
+        </div>
+      </div>
+      <div class="contact-method">
+        <div class="cm-icon"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 10.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+        <div>
+          <div class="cm-title">Phone Support</div>
+          <div class="cm-detail">+961 1 234 567</div>
+          <div class="cm-badge">Mon – Sat, 9am – 7pm</div>
+        </div>
+      </div>
+      <div class="contact-method">
+        <div class="cm-icon"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div>
+          <div class="cm-title">Live Chat</div>
+          <div class="cm-detail">Available on the platform</div>
+          <div class="cm-badge">Average wait under 2 min</div>
+        </div>
+      </div>
+      <div class="contact-method">
+        <div class="cm-icon"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div>
+          <div class="cm-title">Walk-In Office</div>
+          <div class="cm-detail">Gemmayze, Beirut, Lebanon</div>
+          <div class="cm-badge">By appointment only</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="contact-form">
+      <div class="form-title">SEND US A MESSAGE</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">First Name</label><input class="form-input" type="text" placeholder="Karim"/></div>
+        <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" type="text" placeholder="Haddad"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="you@example.com"/></div>
+      <div class="form-group">
+        <label class="form-label">Topic</label>
+        <select class="form-select">
+          <option value="">Select a topic…</option>
+          <option>Buying a car</option>
+          <option>Selling a car</option>
+          <option>Payment issue</option>
+          <option>Delivery question</option>
+          <option>Account problem</option>
+          <option>Report a listing</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Message</label><textarea class="form-textarea" placeholder="Tell us how we can help…"></textarea></div>
+      <button class="form-submit">SEND MESSAGE</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ BUYER GUIDE ══════════════ -->
+<section id="buyer">
+  <p class="section-eyebrow">For Buyers</p>
+  <h2 class="section-title">BUYER GUIDE</h2>
+  <div class="guide-steps">
+    <div class="guide-step">
+      <div class="step-num">01</div>
+      <div>
+        <div class="step-title">Create Your Account</div>
+        <div class="step-desc">Sign up with your email and complete a quick phone verification. Your account unlocks messaging, saved listings, and purchase history. The whole process takes under 3 minutes.</div>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">02</div>
+      <div>
+        <div class="step-title">Browse & Filter</div>
+        <div class="step-desc">Use our search and filter tools to narrow down by category, brand, price range, year, fuel type, and location. Every listing you see has been verified by our team.</div>
+        <div class="step-tip"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Use the AI Predictor to verify if a listed price is fair</div>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">03</div>
+      <div>
+        <div class="step-title">Message the Seller</div>
+        <div class="step-desc">All communication happens through the DriveHub platform — never share personal details outside the chat. Ask questions, request more photos, or propose a viewing time directly.</div>
+        <div class="step-tip"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Average seller response time is under 2 hours</div>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">04</div>
+      <div>
+        <div class="step-title">Secure Checkout</div>
+        <div class="step-desc">Pay through our escrow system. Your funds are held securely and only released to the seller after you confirm receipt. Supports bank transfer, OMT, and major payment methods.</div>
+        <div class="step-tip"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Never pay outside the DriveHub platform</div>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">05</div>
+      <div>
+        <div class="step-title">Delivery or Pickup</div>
+        <div class="step-desc">Choose to pick up from the seller's location, or arrange nationwide delivery through our licensed transport partners. Track your vehicle in real-time once it's in transit.</div>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">06</div>
+      <div>
+        <div class="step-title">Confirm & Transfer Ownership</div>
+        <div class="step-desc">Once you're happy with the vehicle, confirm delivery in the app. Escrow is released. We provide documentation support for ownership transfer at the Mechanique if needed.</div>
+        <div class="step-tip"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> 7-day return window if the car isn't as described</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ SELLER GUIDE ══════════════ -->
+<section id="seller">
+  <p class="section-eyebrow">For Sellers</p>
+  <h2 class="section-title">SELLER GUIDE</h2>
+  <div class="seller-grid">
+    <div class="seller-card">
+      <div class="seller-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="seller-title">Verify Your Identity</div>
+      <div class="seller-desc">Upload a valid Lebanese ID or passport. Verification takes under 24 hours. Verified sellers get a badge on every listing — buyers trust you more.</div>
+    </div>
+    <div class="seller-card">
+      <div class="seller-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+      <div class="seller-title">Create Your Listing</div>
+      <div class="seller-desc">Fill in all vehicle details: brand, model, year, mileage, engine, drive type, price, and location. The more detail, the faster your car sells. Add at least 8 photos — listings with photos sell 4x faster.</div>
+    </div>
+    <div class="seller-card">
+      <div class="seller-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/></svg></div>
+      <div class="seller-title">Schedule Inspection</div>
+      <div class="seller-desc">A DriveHub inspector will contact you to schedule a free 50-point inspection. Once complete, your listing gets the "Verified" badge and goes live on the platform.</div>
+    </div>
+    <div class="seller-card">
+      <div class="seller-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="seller-title">Respond to Buyers</div>
+      <div class="seller-desc">Sellers who respond within 1 hour are 3x more likely to close a deal. Keep your messaging active, answer questions honestly, and arrange viewings through the platform.</div>
+    </div>
+    <div class="seller-card">
+      <div class="seller-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+      <div class="seller-title">Receive Secure Payment</div>
+      <div class="seller-desc">Once the buyer confirms, escrow is released to you. No chasing payments, no bounced cheques, no cash risk. Funds hit your account within 1–2 business days of confirmation.</div>
+    </div>
+    <div class="seller-card">
+      <div class="seller-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div class="seller-title">Transfer Ownership</div>
+      <div class="seller-desc">We provide all the documentation templates you need for the Mechanique transfer. Our team can guide you through the official process step by step.</div>
+    </div>
+  </div>
+  <div class="seller-cta">
+    <div class="seller-cta-text">
+      <h3>READY TO LIST YOUR CAR?</h3>
+      <p>Listing is free. You only pay a 2.5% fee when your car sells. No upfront costs, no subscription.</p>
+    </div>
+    <a href="home.php" class="btn-red">LIST YOUR CAR →</a>
+  </div>
+</section>
+
+<!-- ══════════════ REPORT ══════════════ -->
+<section id="report">
+  <p class="section-eyebrow">Safety</p>
+  <h2 class="section-title">REPORT AN ISSUE</h2>
+  <p style="font-size:15px;font-weight:300;color:rgba(255,255,255,0.45);line-height:1.7;margin-top:16px;max-width:560px;">Help us keep DriveHub safe. If you've encountered a fraudulent listing, a suspicious user, a payment issue, or any other problem — report it here. All reports are reviewed within 24 hours.</p>
+
+  <div class="report-types">
+    <div class="report-type selected" onclick="selectReport(this)">
+      <div class="rt-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      <div class="rt-title">Suspicious Listing</div>
+      <div class="rt-desc">Fake car, stolen photos, misrepresented condition, or scam pricing.</div>
+    </div>
+    <div class="report-type" onclick="selectReport(this)">
+      <div class="rt-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+      <div class="rt-title">Fraudulent User</div>
+      <div class="rt-desc">Fake seller account, identity theft, or someone impersonating DriveHub.</div>
+    </div>
+    <div class="report-type" onclick="selectReport(this)">
+      <div class="rt-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+      <div class="rt-title">Payment Problem</div>
+      <div class="rt-desc">Escrow issue, unauthorized charge, or a transaction that didn't go through.</div>
+    </div>
+    <div class="report-type" onclick="selectReport(this)">
+      <div class="rt-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div class="rt-title">Delivery Issue</div>
+      <div class="rt-desc">Vehicle not delivered, wrong car received, or damage during transport.</div>
+    </div>
+    <div class="report-type" onclick="selectReport(this)">
+      <div class="rt-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div class="rt-title">Harassment</div>
+      <div class="rt-desc">Abusive messages, threats, or inappropriate behavior from another user.</div>
+    </div>
+    <div class="report-type" onclick="selectReport(this)">
+      <div class="rt-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div class="rt-title">Other Issue</div>
+      <div class="rt-desc">Something else that doesn't fit the categories above.</div>
+    </div>
+  </div>
+
+  <div class="report-form">
+    <div class="report-warning">
+      <div class="report-warning-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      <div class="report-warning-text">All reports are confidential. Our trust & safety team reviews every report within 24 hours. False reports are taken seriously and may result in account suspension.</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" type="text" placeholder="Full name"/></div>
+      <div class="form-group"><label class="form-label">Your Email</label><input class="form-input" type="email" placeholder="your@email.com"/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Listing URL or User ID (if applicable)</label><input class="form-input" type="text" placeholder="e.g. drivehub.lb/listing/1234 or user #5678"/></div>
+    <div class="form-group"><label class="form-label">Describe the Issue</label><textarea class="form-textarea" style="min-height:150px;" placeholder="Please provide as much detail as possible — dates, screenshots, transaction IDs, etc."></textarea></div>
+    <button class="form-submit">SUBMIT REPORT</button>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo"><div class="logo-mark"><span>⬡</span></div><span class="logo-name">DriveHub</span></div>
+      <p>Lebanon's premier automotive marketplace. Connecting buyers and sellers with verified listings since 2020.</p>
+    </div>
+    <div><div class="footer-col-title">Browse</div><ul class="footer-links"><li><a href="#">4X4 / SUV</a></li><li><a href="#">2 Doors</a></li><li><a href="#">Sedan</a></li><li><a href="#">Bus & Van</a></li><li><a href="#">Motorcycles</a></li><li><a href="#">Electric</a></li></ul></div>
+    <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="about.html">About Us</a></li><li><a href="#">How It Works</a></li><li><a href="#">List Your Car</a></li><li><a href="careers.html">Careers</a></li><li><a href="press.html">Press</a></li></ul></div>
+    <div><div class="footer-col-title">Support</div><ul class="footer-links"><li><a href="#help">Help Center</a></li><li><a href="#contact">Contact Us</a></li><li><a href="#buyer">Buyer Guide</a></li><li><a href="#seller">Seller Guide</a></li><li><a href="#report">Report an Issue</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 <span>DriveHub</span>. All rights reserved.</div>
+    <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Policy</a></div>
+  </div>
+</footer>
+
+<script>
+  function toggleFaq(el) {
+    const item = el.closest('.faq-item');
+    item.classList.toggle('open');
+  }
+
+  function selectReport(el) {
+    document.querySelectorAll('.report-type').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // Active quick-link on scroll
+  const sections = ['help','contact','buyer','seller','report'];
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && window.scrollY >= el.offsetTop - 120) current = id;
+    });
+    document.querySelectorAll('.quick-link').forEach(a => {
+      a.classList.remove('ql-active');
+      if (a.getAttribute('href') === '#' + current) a.classList.add('ql-active');
+    });
+  });
+</script>
+
+</body>
+</html>

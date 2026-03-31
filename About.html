@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us — DriveHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:    #0a0a0a;
+      --off-black:#111111;
+      --panel:    #161616;
+      --card:     #1a1a1a;
+      --border:   rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.18);
+      --muted:    #666;
+      --text:     #e8e8e8;
+      --white:    #ffffff;
+      --red:      #e8341a;
+      --red-dark: #c0290e;
+      --input-bg: #1c1c1c;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--off-black); }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+
+    /* LOGO BAR */
+    .logo-bar { display: flex; align-items: center; padding: 0 56px; height: 68px; background: rgba(10,10,10,0.95); border-bottom: 1px solid var(--border); }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width: 32px; height: 32px; background: var(--red); clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%); display: flex; align-items: center; justify-content: center; }
+    .logo-mark span { font-size: 13px; color:#fff; font-weight:700; margin-bottom:5px; }
+    .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em; color: var(--white); }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width: 32px; height: 32px; background: var(--red); clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%); display: flex; align-items: center; justify-content: center; }
+    .logo-mark span { font-size: 13px; color:#fff; font-weight:700; margin-bottom:5px; }
+    .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em; color: var(--white); }
+
+    /* PAGE HERO */
+    .page-hero { padding: 60px 80px 80px; position: relative; overflow: hidden; border-bottom: 1px solid var(--border); }
+    .page-hero::before { content:''; position:absolute; inset:0; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 40%, #2a1510 100%); }
+    .page-hero::after { content:''; position:absolute; inset:0; background-image: repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(255,255,255,0.012) 40px, rgba(255,255,255,0.012) 41px); }
+    .page-hero-content { position: relative; z-index: 2; animation: slideUp 0.9s cubic-bezier(.22,1,.36,1) 0.1s both; }
+    @keyframes slideUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+    .page-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; color: var(--red); margin-bottom: 16px; }
+    .page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 7vw, 100px); line-height: 0.9; color: var(--white); letter-spacing: 0.02em; }
+    .page-title span { color: var(--red); }
+    .page-desc { margin-top: 24px; font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.45); max-width: 520px; line-height: 1.7; }
+
+    /* SECTIONS */
+    section { padding: 80px; }
+    .section-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 4vw, 52px); color: var(--white); letter-spacing: 0.03em; line-height: 1; }
+
+    /* MISSION SPLIT */
+    .mission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .mission-text p { font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.55); line-height: 1.8; margin-top: 20px; }
+    .mission-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+    .stat-block { background: var(--panel); border: 1px solid var(--border); padding: 36px 32px; transition: border-color 0.25s; }
+    .stat-block:hover { border-color: rgba(232,52,26,0.3); }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: var(--white); letter-spacing: 0.04em; line-height: 1; }
+    .stat-num span { color: var(--red); }
+    .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 6px; }
+
+    /* STORY TIMELINE */
+    #story { background: var(--off-black); }
+    .timeline { margin-top: 48px; display: flex; flex-direction: column; gap: 0; }
+    .timeline-item { display: grid; grid-template-columns: 120px 1px 1fr; gap: 32px; padding: 32px 0; border-bottom: 1px solid var(--border); }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-year { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--red); letter-spacing: 0.06em; padding-top: 4px; }
+    .timeline-line { background: var(--border); position: relative; }
+    .timeline-line::before { content:''; position:absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+    .timeline-body h3 { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 8px; }
+    .timeline-body p { font-size: 14px; font-weight: 300; color: var(--muted); line-height: 1.7; }
+
+    /* TEAM */
+    #team { background: var(--black); }
+    .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 48px; }
+    .team-card { background: var(--panel); border: 1px solid var(--border); padding: 36px 28px; transition: border-color 0.25s, background 0.25s; }
+    .team-card:hover { border-color: rgba(232,52,26,0.3); background: #181818; }
+    .team-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; margin-bottom: 20px; }
+    .team-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 4px; }
+    .team-role { font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 14px; }
+    .team-bio { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; }
+
+    /* VALUES */
+    #values { background: var(--off-black); }
+    .values-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; border: 1px solid var(--border); margin-top: 48px; }
+    .value-card { padding: 40px 32px; background: var(--panel); border-right: 1px solid var(--border); transition: background 0.2s; }
+    .value-card:last-child { border-right: none; }
+    .value-card:hover { background: #1e1e1e; }
+    .value-icon { width: 44px; height: 44px; background: rgba(232,52,26,0.1); border: 1px solid rgba(232,52,26,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: var(--red); }
+    .value-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 10px; }
+    .value-desc { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; }
+
+    /* NEWSLETTER */
+    .newsletter { background: var(--black); padding: 80px; border-top: 1px solid var(--border); }
+    .newsletter-inner { max-width: 600px; margin: 0 auto; text-align: center; }
+    .newsletter .section-eyebrow { display: block; margin-bottom: 10px; }
+    .newsletter .section-title { margin-bottom: 16px; }
+    .newsletter-sub { font-size: 14px; font-weight: 300; color: var(--muted); line-height: 1.7; margin-bottom: 32px; }
+    .newsletter-form { display: flex; gap: 0; }
+    .newsletter-input { flex: 1; padding: 14px 18px; background: var(--input-bg); border: 1px solid var(--border); border-right: none; border-radius: 6px 0 0 6px; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .newsletter-input::placeholder { color: #444; }
+    .newsletter-input:focus { border-color: var(--red); }
+    .newsletter-btn { padding: 14px 28px; background: var(--red); border: none; border-radius: 0 6px 6px 0; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.12em; cursor: pointer; transition: background 0.2s; }
+    .newsletter-btn:hover { background: var(--red-dark); }
+
+    /* FOOTER */
+    footer { background: var(--panel); border-top: 1px solid var(--border); padding: 56px 80px 32px; }
+    .footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 48px; }
+    .footer-brand p { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; margin-top: 14px; max-width: 240px; }
+    .footer-col-title { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.15em; color: var(--white); margin-bottom: 16px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 13px; font-weight: 300; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--red); }
+    .footer-bottom { display: flex; align-items: center; justify-content: space-between; padding-top: 24px; border-top: 1px solid var(--border); }
+    .footer-copy { font-size: 12px; color: #333; }
+    .footer-copy span { color: var(--red); }
+    .footer-legal { display: flex; gap: 20px; }
+    .footer-legal a { font-size: 12px; color: #333; text-decoration: none; transition: color 0.2s; }
+    .footer-legal a:hover { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="logo-bar">
+  <a class="nav-logo" href="home.php">
+    <div class="logo-mark"><span>⬡</span></div>
+    <span class="logo-name">DriveHub</span>
+  </a>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-content">
+    <p class="page-eyebrow">Our Story</p>
+    <h1 class="page-title">DRIVEN BY<br><span>PURPOSE.</span></h1>
+    <p class="page-desc">DriveHub was built to solve a broken market. We're Lebanon's first fully verified automotive marketplace — where every listing is honest, every transaction is secure, and every buyer finds the right car.</p>
+  </div>
+</div>
+
+<!-- MISSION -->
+<section id="mission">
+  <div class="mission-grid">
+    <div class="mission-text">
+      <p class="section-eyebrow">Our Mission</p>
+      <h2 class="section-title">REDEFINING THE CAR-BUYING EXPERIENCE</h2>
+      <p>We started DriveHub in 2020 with a single belief: buying and selling a car in Lebanon should be transparent, safe, and fast. No more shady deals. No more overpriced lemons. No more unanswered calls.</p>
+      <p style="margin-top:16px;">Today, DriveHub powers thousands of transactions per year — connecting real buyers with verified sellers across every governorate. We're not just a marketplace. We're the standard.</p>
+    </div>
+    <div class="mission-stats">
+      <div class="stat-block">
+        <div class="stat-num">48<span>K+</span></div>
+        <div class="stat-label">Active Listings</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num">120<span>+</span></div>
+        <div class="stat-label">Brands Listed</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num">4.9<span>★</span></div>
+        <div class="stat-label">Avg Rating</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num">6<span>+</span></div>
+        <div class="stat-label">Years Running</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STORY -->
+<section id="story">
+  <p class="section-eyebrow">Our Journey</p>
+  <h2 class="section-title">HOW WE GOT HERE</h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-year">2020</div>
+      <div class="timeline-line"></div>
+      <div class="timeline-body">
+        <h3>Founded in Beirut</h3>
+        <p>DriveHub launched as a simple listings board after our founder couldn't find a trustworthy platform to sell his own car. The first month saw 200 listings and zero scams — the mission was clear.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2021</div>
+      <div class="timeline-line"></div>
+      <div class="timeline-body">
+        <h3>Verification System Launched</h3>
+        <p>We introduced our 50-point vehicle inspection program and seller ID verification — the first platform in Lebanon to offer this level of listing authenticity.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2022</div>
+      <div class="timeline-line"></div>
+      <div class="timeline-body">
+        <h3>Nationwide Coverage</h3>
+        <p>Expanded beyond Beirut to cover all of Lebanon's governorates. Partnered with licensed transporters to offer door-to-door delivery for every sale.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2024</div>
+      <div class="timeline-line"></div>
+      <div class="timeline-body">
+        <h3>AI Price Predictor</h3>
+        <p>Launched our machine-learning price estimator — trained on 300+ real Lebanese-market transactions — giving buyers and sellers an instant, data-driven market value for any vehicle.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026</div>
+      <div class="timeline-line"></div>
+      <div class="timeline-body">
+        <h3>Lebanon's #1 Car Marketplace</h3>
+        <p>DriveHub now leads the Lebanese automotive market with 48K+ active listings, a 4.9-star average rating, and a team of 40+ dedicated to making every transaction the best one yet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <p class="section-eyebrow">The People</p>
+  <h2 class="section-title">MEET THE TEAM</h2>
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="team-avatar">KH</div>
+      <div class="team-name">Karim Haddad</div>
+      <div class="team-role">Co-Founder & CEO</div>
+      <div class="team-bio">Former automotive journalist turned entrepreneur. Karim has been obsessed with cars since age 8 and built DriveHub to fix everything wrong with the industry he loves.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">NM</div>
+      <div class="team-name">Nadia Moussa</div>
+      <div class="team-role">Co-Founder & CTO</div>
+      <div class="team-bio">Full-stack engineer with a background in fintech. Nadia architected DriveHub's entire platform — from the verification pipeline to the AI price predictor.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">ZA</div>
+      <div class="team-name">Ziad Abboud</div>
+      <div class="team-role">Head of Operations</div>
+      <div class="team-bio">Keeps DriveHub running seamlessly across all 8 governorates. Ziad manages our network of inspectors, transporters, and support agents.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">LS</div>
+      <div class="team-name">Lara Saleh</div>
+      <div class="team-role">Head of Growth</div>
+      <div class="team-bio">Data-driven marketer who scaled DriveHub from 500 to 48,000 listings. Lara leads all user acquisition and partnership strategies.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">TR</div>
+      <div class="team-name">Tony Rizk</div>
+      <div class="team-role">Lead Engineer</div>
+      <div class="team-bio">Built the AI predictor and the real-time listings engine. Tony is the reason DriveHub loads fast, stays up, and scales without breaking a sweat.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">MF</div>
+      <div class="team-name">Maya Farhat</div>
+      <div class="team-role">Head of Trust & Safety</div>
+      <div class="team-bio">Designed the 50-point inspection program and buyer protection policy. Maya ensures that every listing on DriveHub is exactly what it claims to be.</div>
+    </div>
+  </div>
+</section>
+
+<!-- VALUES -->
+<section id="values">
+  <p class="section-eyebrow">What Drives Us</p>
+  <h2 class="section-title">OUR VALUES</h2>
+  <div class="values-grid">
+    <div class="value-card">
+      <div class="value-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/></svg></div>
+      <div class="value-title">Radical Transparency</div>
+      <div class="value-desc">Every listing is verified. Every seller is identified. Every price is data-backed. No surprises, ever.</div>
+    </div>
+    <div class="value-card">
+      <div class="value-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="value-title">Buyer First</div>
+      <div class="value-desc">Our protection policies, escrow system, and 7-day return guarantee exist because the buyer's trust is everything.</div>
+    </div>
+    <div class="value-card">
+      <div class="value-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <div class="value-title">Data Over Gut</div>
+      <div class="value-desc">We built an AI to replace guesswork in pricing. Every decision at DriveHub — product or business — is backed by real numbers.</div>
+    </div>
+    <div class="value-card">
+      <div class="value-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+      <div class="value-title">Speed Matters</div>
+      <div class="value-desc">Average seller response under 2 hours. Listings go live in minutes. Because in this market, timing is everything.</div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<div class="newsletter">
+  <div class="newsletter-inner">
+    <span class="section-eyebrow">Stay in the Loop</span>
+    <h2 class="section-title">NEW ARRIVALS.<br>FIRST.</h2>
+    <p class="newsletter-sub">Get notified the moment your dream car hits the market. Weekly digest, zero spam.</p>
+    <div class="newsletter-form">
+      <input class="newsletter-input" type="email" placeholder="your@email.com"/>
+      <button class="newsletter-btn">SUBSCRIBE</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo"><div class="logo-mark"><span>⬡</span></div><span class="logo-name">DriveHub</span></div>
+      <p>Lebanon's premier automotive marketplace. Connecting buyers and sellers with verified listings since 2020.</p>
+    </div>
+    <div><div class="footer-col-title">Browse</div><ul class="footer-links"><li><a href="#">4X4 / SUV</a></li><li><a href="#">2 Doors</a></li><li><a href="#">Sedan</a></li><li><a href="#">Bus & Van</a></li><li><a href="#">Motorcycles</a></li><li><a href="#">Electric</a></li></ul></div>
+    <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="about.html">About Us</a></li><li><a href="#">How It Works</a></li><li><a href="#">List Your Car</a></li><li><a href="careers.html">Careers</a></li><li><a href="press.html">Press</a></li></ul></div>
+    <div><div class="footer-col-title">Support</div><ul class="footer-links"><li><a href="support.html#help">Help Center</a></li><li><a href="support.html#contact">Contact Us</a></li><li><a href="support.html#buyer">Buyer Guide</a></li><li><a href="support.html#seller">Seller Guide</a></li><li><a href="support.html#report">Report an Issue</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 <span>DriveHub</span>. All rights reserved.</div>
+    <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Policy</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

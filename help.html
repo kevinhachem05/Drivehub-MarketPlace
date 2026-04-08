@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Help Center — DriveHub</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0a0a0a;--off-black:#111111;--panel:#161616;--card:#1a1a1a;
+  --border:rgba(255,255,255,0.08);--muted:#666;--text:#e8e8e8;
+  --white:#ffffff;--red:#e8341a;--red-dark:#c0290e;--input-bg:#1c1c1c;
+}
+body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--off-black)}
+::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+
+.logo-bar{display:flex;align-items:center;justify-content:space-between;padding:0 56px;height:68px;background:rgba(10,10,10,0.95);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:32px;height:32px;background:var(--red);clip-path:polygon(0 0,100% 0,100% 65%,50% 100%,0 65%);display:flex;align-items:center;justify-content:center}
+.logo-mark span{font-size:13px;color:#fff;font-weight:700;margin-bottom:5px}
+.logo-name{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.1em;color:var(--white)}
+.nav-back{font-size:12px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:6px;transition:color 0.2s}
+.nav-back:hover{color:var(--red)}
+
+.hero{padding:80px 80px 0;background:var(--off-black);border-bottom:1px solid var(--border);text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(232,52,26,0.12) 0%,transparent 70%);pointer-events:none}
+.hero-eyebrow{font-size:11px;font-weight:500;letter-spacing:0.35em;text-transform:uppercase;color:var(--red);margin-bottom:18px}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,6vw,88px);line-height:0.9;color:var(--white);letter-spacing:0.02em;margin-bottom:20px}
+.hero-desc{font-size:15px;font-weight:300;color:rgba(255,255,255,0.4);max-width:480px;margin:0 auto 40px;line-height:1.7}
+
+.search-bar{display:flex;max-width:560px;margin:0 auto}
+.search-input{flex:1;padding:15px 20px;background:var(--input-bg);border:1px solid rgba(255,255,255,0.12);border-right:none;border-radius:6px 0 0 6px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s}
+.search-input::placeholder{color:#444}
+.search-input:focus{border-color:var(--red)}
+.search-btn{padding:15px 28px;background:var(--red);border:none;border-radius:0 6px 6px 0;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:0.12em;cursor:pointer;transition:background 0.2s;white-space:nowrap}
+.search-btn:hover{background:var(--red-dark)}
+
+.cats-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-top:1px solid var(--border);margin-top:48px}
+.cat{background:var(--panel);padding:32px 28px;text-align:center;cursor:pointer;transition:background 0.2s}
+.cat:hover,.cat.active{background:#1c1c1c}
+.cat.active .cat-icon{color:var(--red)}
+.cat-icon{color:#444;margin-bottom:10px;transition:color 0.2s}
+.cat-name{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:0.08em;color:var(--white);margin-bottom:3px}
+.cat-count{font-size:11px;color:var(--muted)}
+
+.content{display:grid;grid-template-columns:260px 1fr}
+.aside{background:var(--panel);border-right:1px solid var(--border);padding:48px 32px;position:sticky;top:68px;height:calc(100vh - 68px);overflow-y:auto}
+.aside-label{font-size:10px;font-weight:500;letter-spacing:0.3em;text-transform:uppercase;color:var(--red);margin-bottom:20px}
+.aside-link{display:block;padding:10px 14px;font-size:13px;font-weight:400;color:var(--muted);text-decoration:none;border-radius:4px;transition:color 0.2s,background 0.2s;margin-bottom:2px;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+.aside-link:hover{color:var(--white);background:rgba(255,255,255,0.04)}
+.aside-link.active{color:var(--red);background:rgba(232,52,26,0.08)}
+.aside-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.aside-cta{margin-top:32px;padding:18px;background:rgba(232,52,26,0.07);border:1px solid rgba(232,52,26,0.15);border-radius:4px}
+.aside-cta p{font-size:12px;font-weight:300;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:12px}
+.aside-cta a{font-size:12px;font-weight:500;color:var(--red);text-decoration:none;letter-spacing:0.05em}
+
+.faq-main{padding:48px 64px}
+
+.faq-list{display:flex;flex-direction:column;gap:1px}
+.faq-item{background:var(--panel);border:1px solid var(--border);transition:border-color 0.2s}
+.faq-item.open{border-color:rgba(232,52,26,0.2)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;cursor:pointer}
+.faq-q:hover{background:rgba(255,255,255,0.02)}
+.faq-q-text{font-size:14px;font-weight:500;color:var(--text)}
+.faq-toggle{color:var(--red);font-size:22px;line-height:1;transition:transform 0.25s;flex-shrink:0;margin-left:16px}
+.faq-item.open .faq-toggle{transform:rotate(45deg)}
+.faq-a{display:none;padding:16px 24px 22px;font-size:13px;font-weight:300;color:rgba(255,255,255,0.5);line-height:1.85;border-top:1px solid var(--border)}
+.faq-item.open .faq-a{display:block}
+
+.faq-group{margin-bottom:48px}
+.group-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.06em;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.group-title svg{color:var(--red)}
+
+footer{background:var(--panel);border-top:1px solid var(--border);padding:28px 80px}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between}
+.footer-copy{font-size:12px;color:#333}
+.footer-copy span{color:var(--red)}
+.footer-legal{display:flex;gap:20px}
+.footer-legal a{font-size:12px;color:#333;text-decoration:none;transition:color 0.2s}
+.footer-legal a:hover{color:var(--muted)}
+
+.info-note{background:rgba(232,52,26,0.06);border-left:3px solid var(--red);padding:12px 16px;font-size:12px;color:rgba(255,255,255,0.4);line-height:1.7;margin-top:12px;border-radius:0 4px 4px 0}
+</style>
+</head>
+<body>
+
+<div class="logo-bar">
+  <a class="nav-logo" href="home.php">
+    <div class="logo-mark"><span>⬡</span></div>
+    <span class="logo-name">DriveHub</span>
+  </a>
+  <a href="home.php" class="nav-back">← Back to Marketplace</a>
+</div>
+
+<div class="hero">
+  <p class="hero-eyebrow">FAQ</p>
+  <h1 class="hero-title">HELP CENTER</h1>
+  <p class="hero-desc">Search our knowledge base or browse by category. Most answers are just a click away.</p>
+  <div class="search-bar">
+    <input class="search-input" type="text" placeholder="e.g. how do I browse cars?" id="searchInput"/>
+    <button class="search-btn" onclick="doSearch()">SEARCH</button>
+  </div>
+  <div class="cats-strip">
+    <div class="cat active" onclick="filterCat(this,'account')">
+      <div class="cat-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="cat-name">Account</div>
+      <div class="cat-count">4 articles</div>
+    </div>
+    <div class="cat" onclick="filterCat(this,'browsing')">
+      <div class="cat-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <div class="cat-name">Browsing</div>
+      <div class="cat-count">5 articles</div>
+    </div>
+    <div class="cat" onclick="filterCat(this,'predictor')">
+      <div class="cat-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="cat-name">Price Predictor</div>
+      <div class="cat-count">4 articles</div>
+    </div>
+    <div class="cat" onclick="filterCat(this,'contact')">
+      <div class="cat-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="cat-name">Contact Admin</div>
+      <div class="cat-count">3 articles</div>
+    </div>
+    <div class="cat" onclick="filterCat(this,'safety')">
+      <div class="cat-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="cat-name">Safety</div>
+      <div class="cat-count">4 articles</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <aside class="aside">
+    <div class="aside-label">Topics</div>
+    <button class="aside-link active" onclick="scrollToSection('account',this)">Account &amp; Sign In</button>
+    <button class="aside-link" onclick="scrollToSection('browsing',this)">Browsing Cars</button>
+    <button class="aside-link" onclick="scrollToSection('predictor',this)">Price Predictor</button>
+    <button class="aside-link" onclick="scrollToSection('contact',this)">Contact Admin</button>
+    <button class="aside-link" onclick="scrollToSection('safety',this)">Safety &amp; Trust</button>
+    <hr class="aside-divider"/>
+    <div class="aside-cta">
+      <p>Can't find your answer? Our team is ready to help.</p>
+      <a href="Contactus.html">CONTACT SUPPORT →</a>
+    </div>
+  </aside>
+
+  <div class="faq-main" id="faqMain">
+
+    <!-- ACCOUNT & SIGN IN -->
+    <div class="faq-group" id="account">
+      <div class="group-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Account &amp; Sign In
+      </div>
+      <div class="faq-list">
+        <div class="faq-item open">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">How do I create an account?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">
+            Click <strong>Sign Up</strong> on the homepage. Enter your email address and a phone number for verification, set a secure password, and you're in — the whole process takes under 3 minutes. No subscription or credit card is required to browse or use the Price Predictor.
+            <div class="info-note">You only need to verify your identity when you're ready to make a purchase or list a car.</div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">How do I sign in to my existing account?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Click <strong>Sign In</strong> at the top right of any page. Enter your registered email and password. If you signed up with Google or Apple, use the matching button. You'll be taken directly to your dashboard.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">I forgot my password — what do I do?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Click <strong>Forgot Password</strong> on the sign-in page. We'll send a reset link to your registered email address. The link is valid for 30 minutes. If you don't see the email, check your spam folder or request a new link.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">Can I browse cars without an account?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Yes! You can browse all listings, view car photos, read descriptions, and use the Price Predictor without creating an account. An account is required only when you want to contact a seller, save favorites, or purchase a vehicle.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BROWSING CARS -->
+    <div class="faq-group" id="browsing">
+      <div class="group-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Browsing Cars
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">What information can I see on a listing?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">
+            Each listing shows:<br><br>
+            — <strong>Location</strong>: the city/area where the car is located (e.g. Beirut, Jounieh, Saida)<br>
+            — <strong>Description</strong>: seller-written details about the car's history, condition, and features<br>
+            — <strong>Car details</strong>: make, model, year, mileage, fuel type, transmission, color, and engine size<br>
+            — <strong>Verified inspection report</strong>: our 50-point checklist completed by a certified inspector<br>
+            — <strong>Photo gallery</strong>: multiple high-resolution images of the vehicle
+            <div class="info-note">Seller contact details are hidden until you initiate a message through the platform.</div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">How do I filter cars by location?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Use the <strong>Location</strong> filter on the search page to select a governorate or specific city. You can also sort results by distance if you allow location access in your browser. Results update instantly as you adjust the filter.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">How does DriveHub verify listings?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Every listing goes through a 50-point physical inspection by one of our certified inspectors. We verify the vehicle's condition, mileage, history, and documents before the listing goes live. Sellers also complete ID verification, so you always know who you're dealing with.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">Can I save listings to review later?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Yes. Click the heart icon on any listing to save it to your <strong>Saved Cars</strong> list, accessible from your account dashboard. You'll also receive a notification if the price changes on a saved listing.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">Can I request an independent inspection?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Yes. In addition to our included inspection, you can request an additional independent report from a mechanic of your choosing. Arrange a viewing through the in-platform messaging system — never share personal contact details outside the app.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICE PREDICTOR -->
+    <div class="faq-group" id="predictor">
+      <div class="group-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        AI Price Predictor
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">What is the AI Price Predictor and how do I use it?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">
+            The Price Predictor helps you estimate the fair market value of any car in Lebanon <strong>before you buy</strong> — so you know if a listing is priced fairly or overpriced.<br><br>
+            To use it: go to the <strong>Predict Price</strong> page, select the car's make, model, year, mileage, and condition, then click <strong>Get Estimate</strong>. You'll get an instant price range with confidence indicators.
+            <div class="info-note">No account needed — the predictor is free and open to everyone.</div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">How accurate is the Price Predictor?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Our model achieves 96% R² accuracy, trained on 300+ real Lebanese-market transactions. It's the most reliable price estimation tool for the local market. Actual prices may vary slightly based on current condition, negotiation, and seasonal demand.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">Can I use it to set a budget before I start browsing?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Absolutely — this is one of its best uses. Run a prediction for the car type you want (e.g. 2019 Toyota Corolla, average condition, 80,000 km) and use the estimated range as your budget guide. You can then filter listings to that price range on the search page.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">Does the predictor account for USD vs LBP pricing?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Yes. The predictor outputs prices in both USD and LBP at the current market exchange rate. All DriveHub listings are priced in USD for consistency, with an LBP equivalent shown at checkout.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACT ADMIN -->
+    <div class="faq-group" id="contact">
+      <div class="group-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Contact Admin / Support
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">How do I contact DriveHub support?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">
+            You can reach our team through any of the following:<br><br>
+            — <strong>Live Chat</strong>: click the chat bubble at the bottom right of any page (available 9 AM – 9 PM, Mon–Sat)<br>
+            — <strong>Contact Form</strong>: visit the <a href="contact.html" style="color:var(--red)">Contact page</a> and fill in your issue<br>
+            — <strong>Email</strong>: support@drivehub.lb<br>
+            — <strong>WhatsApp</strong>: +961 XX XXX XXX (business hours only)
+            <div class="info-note">Response time is under 2 hours during business hours and within 24 hours on weekends.</div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">I have a dispute with a seller — who do I contact?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Contact support immediately via Live Chat or email and mention "dispute" in your subject line. Our mediation team will step in and work with both parties to reach a fair resolution — typically within 48 hours.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">How do I report a suspicious listing?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Use the <strong>Report</strong> button on any listing page, or visit our Report an Issue page. Our trust &amp; safety team reviews all reports within 24 hours and takes immediate action if a listing is found to be fraudulent or inaccurate.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAFETY & TRUST -->
+    <div class="faq-group" id="safety">
+      <div class="group-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Safety &amp; Trust
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">How does DriveHub protect me from scams?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Every seller is ID-verified. Every listing is physically inspected. Our trust &amp; safety team monitors the platform 24/7 for suspicious activity. Never pay or communicate outside the platform.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">Is my personal data safe?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Yes. DriveHub is fully compliant with data privacy regulations. Your personal information is encrypted, never sold to third parties, and only used to facilitate your transactions on the platform. See our Privacy Policy for full details.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">What is the 7-day buyer guarantee?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">If the car you purchased isn't as described — different condition, undisclosed damage, or inaccurate mileage — you can request a full refund within 7 days of delivery. Contact our support team and we'll handle everything, including coordinating return transport if needed.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">What should I do if I see a suspicious listing?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-a">Use the <strong>Report</strong> button on any listing page. Our team reviews all reports within 24 hours and will take action immediately if a listing is found to be fraudulent.</div>
+        </div>
+      </div>
+    </div>
+
+
+<footer>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 <span>DriveHub</span>. All rights reserved.</div>
+    <div class="footer-legal">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleFaq(el) {
+    el.closest('.faq-item').classList.toggle('open');
+  }
+
+  function filterCat(el, cat) {
+    document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(cat)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function scrollToSection(id, btn) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('.aside-link').forEach(l => l.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function doSearch() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (!q) return;
+    const items = document.querySelectorAll('.faq-item');
+    let first = null;
+    items.forEach(item => {
+      const text = item.querySelector('.faq-q-text').textContent.toLowerCase();
+      const ans = item.querySelector('.faq-a').textContent.toLowerCase();
+      if (text.includes(q) || ans.includes(q)) {
+        item.classList.add('open');
+        item.style.borderColor = 'rgba(232,52,26,0.4)';
+        if (!first) first = item;
+      } else {
+        item.classList.remove('open');
+        item.style.borderColor = '';
+      }
+    });
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  document.getElementById('searchInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+</script>
+</body>
+</html>

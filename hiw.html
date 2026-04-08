@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>How It Works — DriveHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black: #0a0a0a; --off-black: #111111; --panel: #161616; --card: #1a1a1a;
+      --border: rgba(255,255,255,0.08); --muted: #666; --text: #e8e8e8;
+      --white: #ffffff; --red: #e8341a; --red-dark: #c0290e;
+    }
+    body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--off-black); } ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+    .logo-bar { display: flex; align-items: center; justify-content: space-between; padding: 0 56px; height: 68px; background: rgba(10,10,10,0.95); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px); }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width: 32px; height: 32px; background: var(--red); clip-path: polygon(0 0,100% 0,100% 65%,50% 100%,0 65%); display: flex; align-items: center; justify-content: center; }
+    .logo-mark span { font-size: 13px; color:#fff; font-weight:700; margin-bottom:5px; }
+    .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em; color: var(--white); }
+    .nav-back { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .nav-back:hover { color: var(--red); }
+
+    /* HERO */
+    .hero { padding: 100px 80px; background: var(--off-black); border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
+    .hero::after { content:'HOW IT WORKS'; font-family:'Bebas Neue',sans-serif; font-size:240px; letter-spacing:0.02em; color:rgba(255,255,255,0.02); position:absolute; right:-20px; bottom:-40px; white-space:nowrap; pointer-events:none; }
+    .hero-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; color: var(--red); margin-bottom: 16px; animation: up 0.7s both; }
+    .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px,7vw,96px); line-height: 0.88; color: var(--white); letter-spacing: 0.02em; margin-bottom: 24px; animation: up 0.8s 0.1s both; }
+    .hero-title em { color: var(--red); font-style: normal; }
+    .hero-desc { font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.4); max-width: 560px; line-height: 1.75; animation: up 0.9s 0.2s both; }
+    @keyframes up { from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)} }
+
+    /* STATS ROW */
+    .stats { display: grid; grid-template-columns: repeat(4,1fr); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .stat { padding: 36px 40px; border-right: 1px solid var(--border); }
+    .stat:last-child { border-right: none; }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 44px; color: var(--red); letter-spacing: 0.02em; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.5; }
+
+    /* STEPS */
+    .steps-section { padding: 80px; }
+    .steps-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; }
+    .steps-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px,4vw,52px); color: var(--white); letter-spacing: 0.03em; margin-bottom: 56px; }
+
+    .steps-track { position: relative; }
+    .steps-track::before { content:''; position:absolute; left:35px; top:0; bottom:0; width:1px; background: linear-gradient(to bottom, var(--red) 0%, rgba(232,52,26,0.1) 100%); }
+    .step { display: grid; grid-template-columns: 72px 1fr; gap: 40px; padding-bottom: 56px; position: relative; animation: up 0.7s both; }
+    .step:nth-child(2) { animation-delay: 0.1s; }
+    .step:nth-child(3) { animation-delay: 0.2s; }
+    .step:nth-child(4) { animation-delay: 0.3s; }
+    .step:nth-child(5) { animation-delay: 0.4s; }
+    .step:last-child { padding-bottom: 0; }
+    .step-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--panel); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; z-index: 2; transition: border-color 0.3s, background 0.3s; }
+    .step:hover .step-circle { border-color: var(--red); background: rgba(232,52,26,0.08); }
+    .step-num { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--red); letter-spacing: 0.05em; }
+    .step-body { padding-top: 18px; }
+    .step-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.05em; color: var(--white); margin-bottom: 10px; }
+    .step-desc { font-size: 14px; font-weight: 300; color: rgba(255,255,255,0.45); line-height: 1.8; max-width: 600px; }
+    .step-tip { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; font-size: 12px; color: var(--red); background: rgba(232,52,26,0.07); border: 1px solid rgba(232,52,26,0.18); padding: 6px 12px; border-radius: 3px; }
+    .step-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 11px; color: #2a9d5c; background: rgba(42,157,92,0.08); border: 1px solid rgba(42,157,92,0.2); padding: 4px 10px; border-radius: 3px; }
+
+    /* TRUST SECTION */
+    .trust { background: var(--off-black); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px; }
+    .trust-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-top: 48px; }
+    .trust-card { background: var(--panel); border: 1px solid var(--border); padding: 36px 32px; transition: border-color 0.25s; }
+    .trust-card:hover { border-color: rgba(232,52,26,0.25); }
+    .tc-icon { width: 44px; height: 44px; background: rgba(232,52,26,0.1); border: 1px solid rgba(232,52,26,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--red); margin-bottom: 20px; }
+    .tc-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.05em; color: var(--white); margin-bottom: 10px; }
+    .tc-desc { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.75; }
+
+    /* CTA */
+    .cta { padding: 80px; display: flex; align-items: center; justify-content: space-between; gap: 40px; border-top: 1px solid var(--border); }
+    .cta-text h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px,4vw,52px); color: var(--white); letter-spacing: 0.03em; margin-bottom: 8px; }
+    .cta-text p { font-size: 14px; font-weight: 300; color: var(--muted); }
+    .btn-red { display: inline-block; padding: 14px 36px; background: var(--red); border: none; border-radius: 4px; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.12em; cursor: pointer; text-decoration: none; transition: background 0.2s, transform 0.15s; }
+    .btn-red:hover { background: var(--red-dark); transform: translateY(-1px); }
+    .btn-ghost { display: inline-block; padding: 14px 36px; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.12em; cursor: pointer; text-decoration: none; transition: border-color 0.2s, color 0.2s; }
+    .btn-ghost:hover { border-color: var(--red); color: var(--white); }
+    .btn-row { display: flex; gap: 12px; }
+
+    footer { background: var(--panel); border-top: 1px solid var(--border); padding: 28px 80px; }
+    .footer-bottom { display: flex; align-items: center; justify-content: space-between; }
+    .footer-copy { font-size: 12px; color: #333; }
+    .footer-copy span { color: var(--red); }
+    .footer-legal { display: flex; gap: 20px; }
+    .footer-legal a { font-size: 12px; color: #333; text-decoration: none; transition: color 0.2s; }
+    .footer-legal a:hover { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="logo-bar">
+  <a class="nav-logo" href="home.php">
+    <div class="logo-mark"><span>⬡</span></div>
+    <span class="logo-name">DriveHub</span>
+  </a>
+  <a href="home.php" class="nav-back">← Back to Marketplace</a>
+</div>
+
+<div class="hero">
+  <p class="hero-eyebrow">Process</p>
+  <h1 class="hero-title">HOW<br><em>IT WORKS</em></h1>
+  <p class="hero-desc">Browse online, shortlist your favourites, then visit our exhibition to inspect, pay, and drive away — everything handled in one place, the same day.</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-num">50+</div><div class="stat-label">Point verification on every listing</div></div>
+  <div class="stat"><div class="stat-num">7</div><div class="stat-label">Day buyer guarantee window</div></div>
+  <div class="stat"><div class="stat-num">96%</div><div class="stat-label">AI price predictor accuracy</div></div>
+  <div class="stat"><div class="stat-num">1 day</div><div class="stat-label">Full purchase & registration on-site</div></div>
+</div>
+
+<div class="steps-section">
+  <p class="steps-eyebrow">Step by Step</p>
+  <h2 class="steps-title">YOUR BUYING JOURNEY</h2>
+  <div class="steps-track">
+
+    <div class="step">
+      <div class="step-circle"><span class="step-num">01</span></div>
+      <div class="step-body">
+        <div class="step-title">Create Your Account</div>
+        <div class="step-desc">Sign up with your email and complete a quick phone verification. Unlock saved listings, messaging, and your purchase history. Takes under 3 minutes — no subscription or credit card needed.</div>
+        <div class="step-badge">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          Free to join
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-circle"><span class="step-num">02</span></div>
+      <div class="step-body">
+        <div class="step-title">Browse & Shortlist Online</div>
+        <div class="step-desc">Filter listings by brand, model, year, price range, fuel type, and location. View full descriptions, high-resolution photos, and our verified 50-point inspection report for every car — all before you leave home.</div>
+        <div class="step-tip">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Use the AI Price Predictor to check if a listing is fairly priced
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-circle"><span class="step-num">03</span></div>
+      <div class="step-body">
+        <div class="step-title">Contact Us & Book a Visit</div>
+        <div class="step-desc">Found something you like? Message our team directly through the platform to ask questions or confirm the car is available. Then book a time to visit our exhibition at your convenience — we'll have the car ready for you.</div>
+        <div class="step-tip">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Walk-ins are welcome — no appointment required
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-circle"><span class="step-num">04</span></div>
+      <div class="step-body">
+        <div class="step-title">Inspect the Car in Person</div>
+        <div class="step-desc">Visit our exhibition and see the car for yourself. Take it for a test drive, go over the inspection report with our staff, or bring your own mechanic for an independent check. No pressure — we want you to be fully confident before you commit.</div>
+        <div class="step-badge">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          Test drives available on-site
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-circle"><span class="step-num">05</span></div>
+      <div class="step-body">
+        <div class="step-title">Pay On-Site at the Exhibition</div>
+        <div class="step-desc">Once you're happy with the car, complete your payment in person at our exhibition. We accept cash (USD/LBP) and bank transfers. Our staff will walk you through the paperwork and ensure everything is in order before you sign.</div>
+        <div class="step-tip">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          All transactions are documented and receipted
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-circle"><span class="step-num">06</span></div>
+      <div class="step-body">
+        <div class="step-title">Car Registration — We Handle It</div>
+        <div class="step-desc">Our team manages the full ownership transfer and Mechanique registration on your behalf. We prepare all required documents, accompany you through the process, or handle it entirely so you don't have to deal with the paperwork yourself.</div>
+        <div class="step-badge">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          Full registration support included
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="trust">
+  <p class="steps-eyebrow">Why DriveHub</p>
+  <h2 class="steps-title">BUILT FOR YOUR PROTECTION</h2>
+  <div class="trust-grid">
+    <div class="trust-card">
+      <div class="tc-icon">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="tc-title">ID-Verified Sellers</div>
+      <div class="tc-desc">Every seller on DriveHub passes identity verification before they can list a vehicle. You always know exactly who you're buying from.</div>
+    </div>
+    <div class="trust-card">
+      <div class="tc-icon">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/></svg>
+      </div>
+      <div class="tc-title">50-Point Inspection</div>
+      <div class="tc-desc">Our certified inspectors physically examine every vehicle before it's listed. Condition, mileage, history — all verified and on record before your visit.</div>
+    </div>
+    <div class="trust-card">
+      <div class="tc-icon">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="tc-title">One-Stop Exhibition</div>
+      <div class="tc-desc">Browse online, then come to our showroom to inspect, pay, and register — everything handled under one roof on the same day. No running around.</div>
+    </div>
+  </div>
+</div>
+
+<div class="cta">
+  <div class="cta-text">
+    <h2>READY TO FIND YOUR CAR?</h2>
+    <p>Browse verified listings, then visit us at the exhibition.</p>
+  </div>
+  <div class="btn-row">
+    <a href="home.php" class="btn-red">BROWSE LISTINGS →</a>
+    <a href="help.html" class="btn-ghost">HELP CENTER</a>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 <span>DriveHub</span>. All rights reserved.</div>
+    <div class="footer-legal">
+      <a href="contact.html">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

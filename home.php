@@ -649,8 +649,8 @@ ob_end_flush();
       <p>Lebanon's premier automotive marketplace. Connecting buyers and sellers with verified listings since 2020.</p>
     </div>
     <div><div class="footer-col-title">Browse</div><ul class="footer-links"><li><a href="#">4X4 / SUV</a></li><li><a href="#">2 Doors</a></li><li><a href="#">Sedan</a></li><li><a href="#">Bus & Van</a></li><li><a href="#">Motorcycles</a></li><li><a href="#">Electric</a></li></ul></div>
-    <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="About.html">About Us</a></li><li><a href="#">How It Works</a></li><li><a href="#">List Your Car</a></li><li><a href="Careers.html">Careers</a></li><li><a href="Press.html">Press</a></li></ul></div>
-    <div><div class="footer-col-title">Support</div><ul class="footer-links"><li><a href="Support.html">Help Center</a></li><li><a href="Support.html">Contact Us</a></li><li><a href="Support.html">Buyer Guide</a></li><li><a href="Support.html">Seller Guide</a></li><li><a href="Support.html">Report an Issue</a></li><li><a href="predictor.html">AI Predictor</a></li></ul></div>
+    <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="About.html">About Us</a></li><li><a href="hiw.html">How It Works</a></li><li><a href="#">List Your Car</a></li><li><a href="Careers.html">Careers</a></li><li><a href="Press.html">Press</a></li></ul></div>
+    <div><div class="footer-col-title">Support</div><ul class="footer-links"><li><a href="help.html">Help Center</a></li><li><a href="Contactus.html">Contact Us</a></li><li><a href="Support.html">Buyer Guide</a></li><li><a href="Support.html">Seller Guide</a></li><li><a href="Support.html">Report an Issue</a></li><li><a href="predictor.html">AI Predictor</a></li></ul></div>
   </div>
   <div class="footer-bottom">
     <div class="footer-copy">© 2026 <span>DriveHub</span>. All rights reserved.</div>

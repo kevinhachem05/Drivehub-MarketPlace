@@ -15,6 +15,13 @@ $result  = $conn->query("SELECT * FROM cars ORDER BY created_at DESC");
 if ($result) {
     while ($row = $result->fetch_assoc()) $db_cars[] = $row;
 }
+
+/* ── Fetch 3 featured cars (admin-selected) ── */
+$featured_cars = [];
+$feat_result = $conn->query("SELECT * FROM cars WHERE featured = 1 ORDER BY created_at DESC LIMIT 3");
+if ($feat_result) {
+    while ($row = $feat_result->fetch_assoc()) $featured_cars[] = $row;
+}
 ob_end_flush();
 ?>
 <!DOCTYPE html>
@@ -64,24 +71,31 @@ ob_end_flush();
     .nav-links a { font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; }
     .nav-links a:hover { color: var(--white); }
     .nav-links a.active { color: var(--red); }
-    .nav-links a.nav-ai {
-      display: inline-flex; align-items: center; gap: 6px;
-      color: var(--red);
-      padding: 5px 12px;
-      border: 1px solid rgba(232,52,26,0.3);
-      border-radius: 4px;
-      background: rgba(232,52,26,0.06);
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .nav-links a.nav-ai:hover { background: rgba(232,52,26,0.14); border-color: rgba(232,52,26,0.5); color: var(--red); }
     .nav-ai-dot { width: 5px; height: 5px; background: var(--red); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
     .nav-cta { display: flex; align-items: center; gap: 12px; }
     .welcome { font-size: 13px; color: var(--muted); }
-    .btn-outline { padding: 9px 20px; background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: border-color 0.2s, background 0.2s; text-decoration: none; }
-    .btn-outline:hover { border-color: var(--border-hover); background: #1c1c1c; }
-    .btn-red { padding: 9px 22px; background: var(--red); border: none; border-radius: 5px; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.1em; cursor: pointer; text-decoration: none; transition: background 0.2s; }
-    .btn-red:hover { background: var(--red-dark); }
+
+    /* ── LOGOUT BUTTON ── */
+    .nav-logout-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid rgba(232,52,26,0.25);
+      border-radius: 6px;
+      color: #f87171;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-logout-btn:hover {
+      background: rgba(232,52,26,0.1);
+      border-color: var(--red);
+      color: var(--white);
+    }
+
     .nav-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 6px; transition: background 0.2s; text-decoration: none; }
     .nav-profile:hover { background: rgba(255,255,255,0.06); }
     .nav-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #fff; flex-shrink: 0; }
@@ -200,78 +214,23 @@ ob_end_flush();
       background-image: repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(255,255,255,0.008) 40px, rgba(255,255,255,0.008) 41px);
       pointer-events: none;
     }
-    .ai-inner {
-  display: grid;
-  grid-template-columns: 1fr 1.08fr;
-  gap: 72px;
-  align-items: start; /* ✅ THIS LINE fixes the alignment */
-}
-    .ai-left {
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    .ai-right {
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .ai-model-stat {
-      display: flex; gap: 32px;
-      margin-top: 32px; padding-top: 28px;
-      border-top: 1px solid var(--border);
-    }
-    .ai-stat-num {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 30px; color: var(--white); letter-spacing: 0.04em;
-    }
+    .ai-inner { display: grid; grid-template-columns: 1fr 1.08fr; gap: 72px; align-items: start; }
+    .ai-left { min-height: 100%; display: flex; flex-direction: column; }
+    .ai-right { min-height: 100%; display: flex; flex-direction: column; gap: 2px; }
+    .ai-model-stat { display: flex; gap: 32px; margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--border); }
+    .ai-stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--white); letter-spacing: 0.04em; }
     .ai-stat-num span { color: var(--red); }
-    .ai-stat-label {
-      font-size: 10px; color: var(--muted);
-      letter-spacing: 0.15em; text-transform: uppercase; margin-top: 3px;
-    }
-    .ai-cta-block {
-      display: flex; align-items: center; gap: 20px;
-      margin-top: 40px;
-    }
-    .ai-cta-btn {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 16px 36px;
-      background: var(--red); border: none; border-radius: 6px;
-      color: #fff;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 18px; letter-spacing: 0.12em;
-      cursor: pointer; text-decoration: none;
-      position: relative; overflow: hidden;
-      transition: background 0.2s, transform 0.1s;
-    }
+    .ai-stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 3px; }
+    .ai-cta-block { display: flex; align-items: center; gap: 20px; margin-top: 40px; }
+    .ai-cta-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; background: var(--red); border: none; border-radius: 6px; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.12em; cursor: pointer; text-decoration: none; position: relative; overflow: hidden; transition: background 0.2s, transform 0.1s; }
     .ai-cta-btn::after { content:''; position:absolute; inset:0; background: linear-gradient(to right, transparent, rgba(255,255,255,0.12), transparent); transform: translateX(-100%); transition: transform 0.5s; }
     .ai-cta-btn:hover { background: var(--red-dark); }
     .ai-cta-btn:hover::after { transform: translateX(100%); }
     .ai-cta-btn:active { transform: scale(0.98); }
     .ai-cta-note { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.65; }
-    .ai-right { display: flex; flex-direction: column; gap: 2px; }
-    .ai-feature-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      padding: 22px 26px;
-      display: flex; align-items: flex-start; gap: 16px;
-      transition: border-color 0.25s, background 0.25s;
-    }
-    .ai-feature-card {
-  min-height: 125px;   /* 🔥 increase height */
-  padding: 30px 30px;  /* 🔥 bigger inside spacing */
-}
+    .ai-feature-card { background: var(--panel); border: 1px solid var(--border); padding: 30px 30px; min-height: 125px; display: flex; align-items: flex-start; gap: 16px; transition: border-color 0.25s, background 0.25s; }
     .ai-feature-card:hover { border-color: rgba(232,52,26,0.3); background: #181818; }
-    .ai-feature-icon {
-      width: 38px; height: 38px; flex-shrink: 0;
-      background: rgba(232,52,26,0.1);
-      border: 1px solid rgba(232,52,26,0.2);
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--red);
-    }
+    .ai-feature-icon { width: 38px; height: 38px; flex-shrink: 0; background: rgba(232,52,26,0.1); border: 1px solid rgba(232,52,26,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--red); }
     .ai-feature-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.06em; color: var(--white); margin-bottom: 4px; }
     .ai-feature-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; }
 
@@ -365,9 +324,7 @@ ob_end_flush();
 </head>
 <body>
 
-<!-- ══════════════════════════════════════
-     NAV
-══════════════════════════════════════ -->
+<!-- NAV -->
 <nav>
   <a href="#" class="nav-logo">
     <div class="logo-mark"><span>⬡</span></div>
@@ -382,7 +339,14 @@ ob_end_flush();
     <li><a href="#">Contact</a></li>
   </ul>
   <div class="nav-cta">
-    <a href="logout.php" class="btn-outline">Sign Out</a>
+    <a href="logout.php" class="nav-logout-btn">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Logout
+    </a>
     <a href="#" class="nav-profile">
       <div class="nav-avatar"><?php echo strtoupper(mb_substr($_SESSION['first_name'], 0, 1)); ?></div>
       <span class="nav-profile-name"><?php echo htmlspecialchars($_SESSION['first_name']); ?></span>
@@ -390,9 +354,7 @@ ob_end_flush();
   </div>
 </nav>
 
-<!-- ══════════════════════════════════════
-     HERO
-══════════════════════════════════════ -->
+<!-- HERO -->
 <section class="hero">
   <div class="hero-bg"></div>
   <div class="hero-lines"></div>
@@ -420,9 +382,7 @@ ob_end_flush();
   </div>
 </section>
 
-<!-- ══════════════════════════════════════
-     BRANDS STRIP
-══════════════════════════════════════ -->
+<!-- BRANDS STRIP -->
 <div class="brands-strip">
   <div class="brands-label">Trusted brands on DriveHub</div>
   <div class="brands-scroll">
@@ -431,9 +391,7 @@ ob_end_flush();
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     CATEGORIES — DB ONLY
-══════════════════════════════════════ -->
+<!-- CATEGORIES -->
 <section id="categories">
   <div class="section-header">
     <div>
@@ -442,7 +400,6 @@ ob_end_flush();
     </div>
     <a href="#" class="view-all">View All Listings →</a>
   </div>
-
   <div class="car-grid">
     <?php if (!empty($db_cars)): ?>
       <?php foreach ($db_cars as $car):
@@ -454,7 +411,7 @@ ob_end_flush();
         $eb = addslashes(htmlspecialchars($car['brand']));
         $ed = addslashes(htmlspecialchars($car['description']));
         $ec = addslashes(htmlspecialchars($car['category']));
-        $ep = addslashes(htmlspecialchars(string: $car['price']));
+        $ep = addslashes(htmlspecialchars($car['price']));
         $ee = addslashes(htmlspecialchars($car['engine'] ?: '–'));
         $ew = addslashes(htmlspecialchars($car['power']  ?: '–'));
         $ev = addslashes(htmlspecialchars($car['drive']  ?: '–'));
@@ -502,60 +459,115 @@ ob_end_flush();
   </div>
 </section>
 
-<!-- ══════════════════════════════════════
-     FEATURED
-══════════════════════════════════════ -->
+<!-- FEATURED -->
 <section id="featured">
   <div class="section-header">
     <div><p class="section-eyebrow">Editor's Picks</p><h2 class="section-title">FEATURED THIS WEEK</h2></div>
     <a href="#" class="view-all">See All Featured →</a>
   </div>
+
+  <?php if (!empty($featured_cars)): ?>
   <div class="featured-grid">
-    <div class="featured-main car-card" onclick="openModal('Lamborghini Urus S','Lamborghini','The Super SUV. Lamborghini DNA in a five-door body. Brutal performance meets daily usability.','Luxury SUV','$280,000','V8 4.0L TT','666 HP','AWD','2024','badge-hot')">
+
+    <?php
+    $f  = $featured_cars[0];
+    $bc = $f['badge']==='new' ? 'badge-new' : ($f['badge']==='hot' ? 'badge-hot' : ($f['badge']==='sale' ? 'badge-sale' : ''));
+    ?>
+    <div class="featured-main car-card" onclick="openModal(
+      '<?php echo addslashes(htmlspecialchars($f['car_name']));?>',
+      '<?php echo addslashes(htmlspecialchars($f['brand']));?>',
+      '<?php echo addslashes(htmlspecialchars($f['description']));?>',
+      '<?php echo addslashes(htmlspecialchars($f['category']));?>',
+      '<?php echo addslashes(htmlspecialchars($f['price']));?>',
+      '<?php echo addslashes(htmlspecialchars($f['engine']?:'–'));?>',
+      '<?php echo addslashes(htmlspecialchars($f['power']?:'–'));?>',
+      '<?php echo addslashes(htmlspecialchars($f['drive']?:'–'));?>',
+      '<?php echo $f['year'];?> | <?php echo number_format($f['kms']);?> km',
+      '<?php echo $bc;?>')">
       <span class="featured-tag">FEATURED</span>
-      <div class="car-img"><svg class="car-img-icon" width="120" height="75" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg><span class="car-img-label">Add Your Image</span></div>
-      <div class="car-body"><div class="car-brand">Lamborghini</div><div class="car-name">Urus S</div><div class="car-desc">666hp twin-turbo V8. Corsa driving mode. 22" forged wheels. The benchmark Super SUV.</div><div class="car-specs"><div class="car-spec"><div class="car-spec-val">V8TT</div><div class="car-spec-key">Engine</div></div><div class="car-spec"><div class="car-spec-val">666HP</div><div class="car-spec-key">Power</div></div><div class="car-spec"><div class="car-spec-val">AWD</div><div class="car-spec-key">Drive</div></div><div class="car-spec"><div class="car-spec-val">2024</div><div class="car-spec-key">Year</div></div></div><div class="car-footer"><div class="car-price">$280,000 <span>/ neg.</span></div><button class="car-btn">View Details →</button></div></div>
+      <div class="car-img">
+        <?php if ($f['image_path'] && file_exists($f['image_path'])): ?>
+          <img src="<?php echo htmlspecialchars($f['image_path']);?>" alt=""/>
+        <?php else: ?>
+          <svg class="car-img-icon" width="120" height="75" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
+          <span class="car-img-label">No Image</span>
+        <?php endif; ?>
+      </div>
+      <div class="car-body">
+        <div class="car-brand"><?php echo htmlspecialchars($f['brand']);?></div>
+        <div class="car-name"><?php echo htmlspecialchars($f['car_name']);?></div>
+        <div class="car-desc"><?php echo htmlspecialchars(mb_strimwidth($f['description'],0,120,'…'));?></div>
+        <div class="car-specs">
+          <div class="car-spec"><div class="car-spec-val"><?php echo htmlspecialchars($f['engine']?:'–');?></div><div class="car-spec-key">Engine</div></div>
+          <div class="car-spec"><div class="car-spec-val"><?php echo htmlspecialchars($f['power']?:'–');?></div><div class="car-spec-key">Power</div></div>
+          <div class="car-spec"><div class="car-spec-val"><?php echo htmlspecialchars($f['drive']?:'–');?></div><div class="car-spec-key">Drive</div></div>
+          <div class="car-spec"><div class="car-spec-val"><?php echo $f['year'];?></div><div class="car-spec-key">Year</div></div>
+        </div>
+        <div class="car-footer">
+          <div class="car-price"><?php echo htmlspecialchars($f['price']);?> <span>/ neg.</span></div>
+          <button class="car-btn">View Details →</button>
+        </div>
+      </div>
     </div>
-    <div class="featured-side car-card" onclick="openModal('Ferrari Roma','Ferrari','La Dolce Vita in coupe form. The most elegant Ferrari of the modern era.','2 Doors','$225,000','V8 3.9L TT','612 HP','RWD','2024','badge-new')">
-      <div class="car-img"><svg class="car-img-icon" width="80" height="50" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg><span class="car-img-label">Add Your Image</span></div>
-      <div class="car-body"><div class="car-brand">Ferrari</div><div class="car-name">Roma</div><div class="car-desc">612hp. 8-speed DCT. The most beautiful Ferrari of the decade.</div><div class="car-footer"><div class="car-price">$225,000 <span>/ neg.</span></div><button class="car-btn">View →</button></div></div>
+
+    <?php for ($i = 1; $i <= 2; $i++):
+      if (!isset($featured_cars[$i])) continue;
+      $s  = $featured_cars[$i];
+      $sbc = $s['badge']==='new' ? 'badge-new' : ($s['badge']==='hot' ? 'badge-hot' : ($s['badge']==='sale' ? 'badge-sale' : ''));
+    ?>
+    <div class="featured-side car-card" onclick="openModal(
+      '<?php echo addslashes(htmlspecialchars($s['car_name']));?>',
+      '<?php echo addslashes(htmlspecialchars($s['brand']));?>',
+      '<?php echo addslashes(htmlspecialchars($s['description']));?>',
+      '<?php echo addslashes(htmlspecialchars($s['category']));?>',
+      '<?php echo addslashes(htmlspecialchars($s['price']));?>',
+      '<?php echo addslashes(htmlspecialchars($s['engine']?:'–'));?>',
+      '<?php echo addslashes(htmlspecialchars($s['power']?:'–'));?>',
+      '<?php echo addslashes(htmlspecialchars($s['drive']?:'–'));?>',
+      '<?php echo $s['year'];?> | <?php echo number_format($s['kms']);?> km',
+      '<?php echo $sbc;?>')">
+      <div class="car-img">
+        <?php if ($s['image_path'] && file_exists($s['image_path'])): ?>
+          <img src="<?php echo htmlspecialchars($s['image_path']);?>" alt=""/>
+        <?php else: ?>
+          <svg class="car-img-icon" width="80" height="50" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
+          <span class="car-img-label">No Image</span>
+        <?php endif; ?>
+      </div>
+      <div class="car-body">
+        <div class="car-brand"><?php echo htmlspecialchars($s['brand']);?></div>
+        <div class="car-name"><?php echo htmlspecialchars($s['car_name']);?></div>
+        <div class="car-desc"><?php echo htmlspecialchars(mb_strimwidth($s['description'],0,80,'…'));?></div>
+        <div class="car-footer">
+          <div class="car-price"><?php echo htmlspecialchars($s['price']);?> <span>/ neg.</span></div>
+          <button class="car-btn">View →</button>
+        </div>
+      </div>
     </div>
-    <div class="featured-side car-card" onclick="openModal('McLaren 720S','McLaren','Pure drivers car. Proactive Chassis Control II. Monocage II carbon structure.','2 Doors','$298,000','V8 4.0L TT','710 HP','RWD','2023','badge-hot')">
-      <div class="car-img"><svg class="car-img-icon" width="80" height="50" viewBox="0 0 800 400" fill="white"><path d="M80 290 Q90 220 170 200 L300 160 Q400 120 520 145 L680 175 Q760 195 775 235 L790 270 Q790 290 740 295 Q720 252 660 252 Q600 252 580 295 L260 295 Q240 252 180 252 Q120 252 105 295 Z"/><circle cx="180" cy="308" r="40"/><circle cx="660" cy="308" r="40"/><circle cx="180" cy="308" r="24" fill="#111"/><circle cx="660" cy="308" r="24" fill="#111"/></svg><span class="car-img-label">Add Your Image</span></div>
-      <div class="car-body"><div class="car-brand">McLaren</div><div class="car-name">720S</div><div class="car-desc">710hp. 0-200 in 7.8s. Electrohydraulic active suspension.</div><div class="car-footer"><div class="car-price">$298,000 <span>/ neg.</span></div><button class="car-btn">View →</button></div></div>
-    </div>
+    <?php endfor; ?>
+
   </div>
+  <?php else: ?>
+  <div style="padding:60px 0;text-align:center;border:1px dashed rgba(255,255,255,0.08);color:#333;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;">
+    No featured cars yet — add listings from the admin panel.
+  </div>
+  <?php endif; ?>
 </section>
 
-<!-- ══════════════════════════════════════
-     AI PRICE PREDICTOR
-══════════════════════════════════════ -->
+<!-- AI PREDICTOR -->
 <section id="ai-predictor">
   <div class="ai-inner">
-
-    <!-- Left: Copy + Stats + CTA -->
     <div class="ai-left">
       <p class="section-eyebrow">Machine Learning</p>
       <h2 class="section-title">KNOW YOUR<br>CAR'S <span style="color:var(--red)">TRUE WORTH</span></h2>
       <p style="font-size:15px;font-weight:300;color:rgba(255,255,255,0.45);line-height:1.7;margin-top:20px;max-width:440px;">
         Our AI model — trained on 300+ real vehicle transactions using XGBoost regression — delivers instant, data-driven price estimates. Enter any car's specs and get a market value in seconds.
       </p>
-
       <div class="ai-model-stat">
-        <div>
-          <div class="ai-stat-num">96<span>%</span></div>
-          <div class="ai-stat-label">R² Accuracy</div>
-        </div>
-        <div>
-          <div class="ai-stat-num">301<span>+</span></div>
-          <div class="ai-stat-label">Training Records</div>
-        </div>
-        <div>
-          <div class="ai-stat-num">3</div>
-          <div class="ai-stat-label">Models Compared</div>
-        </div>
+        <div><div class="ai-stat-num">96<span>%</span></div><div class="ai-stat-label">R² Accuracy</div></div>
+        <div><div class="ai-stat-num">301<span>+</span></div><div class="ai-stat-label">Training Records</div></div>
+        <div><div class="ai-stat-num">3</div><div class="ai-stat-label">Models Compared</div></div>
       </div>
-
       <div class="ai-cta-block">
         <a href="predictor.html" class="ai-cta-btn">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 8v4l3 3"/></svg>
@@ -564,56 +576,28 @@ ob_end_flush();
         <div class="ai-cta-note">Free · No signup required<br>Instant estimate in seconds</div>
       </div>
     </div>
-
-    <!-- Right: Feature cards -->
     <div class="ai-right">
       <div class="ai-feature-card">
-        <div class="ai-feature-icon">
-          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg>
-        </div>
-        <div>
-          <div class="ai-feature-title">XGBoost Regressor</div>
-          <div class="ai-feature-desc">The winning model from a 3-way comparison — selected for highest R² and lowest mean absolute error on the test set.</div>
-        </div>
+        <div class="ai-feature-icon"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg></div>
+        <div><div class="ai-feature-title">XGBoost Regressor</div><div class="ai-feature-desc">The winning model from a 3-way comparison — selected for highest R² and lowest mean absolute error on the test set.</div></div>
       </div>
-
       <div class="ai-feature-card">
-        <div class="ai-feature-icon">
-          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        </div>
-        <div>
-          <div class="ai-feature-title">8 Smart Inputs</div>
-          <div class="ai-feature-desc">Year, original price, mileage, fuel type, transmission, seller type, and ownership history — all weighted by real market patterns.</div>
-        </div>
+        <div class="ai-feature-icon"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+        <div><div class="ai-feature-title">8 Smart Inputs</div><div class="ai-feature-desc">Year, original price, mileage, fuel type, transmission, seller type, and ownership history — all weighted by real market patterns.</div></div>
       </div>
-
       <div class="ai-feature-card">
-        <div class="ai-feature-icon">
-          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        </div>
-        <div>
-          <div class="ai-feature-title">Dual Prediction Mode</div>
-          <div class="ai-feature-desc">Get an exact USD price or a market tier (Budget → Luxury) — with a confidence bar and contextual AI insight on every result.</div>
-        </div>
+        <div class="ai-feature-icon"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div><div class="ai-feature-title">Dual Prediction Mode</div><div class="ai-feature-desc">Get an exact USD price or a market tier (Budget → Luxury) — with a confidence bar and contextual AI insight on every result.</div></div>
       </div>
-
       <div class="ai-feature-card">
-        <div class="ai-feature-icon">
-          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div>
-          <div class="ai-feature-title">Built for DriveHub</div>
-          <div class="ai-feature-desc">Trained on Lebanese-market USD prices. Not a generic tool — a model calibrated to the vehicles and valuations you actually see here.</div>
-        </div>
+        <div class="ai-feature-icon"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div><div class="ai-feature-title">Built for DriveHub</div><div class="ai-feature-desc">Trained on Lebanese-market USD prices. Not a generic tool — a model calibrated to the vehicles and valuations you actually see here.</div></div>
       </div>
     </div>
-
   </div>
 </section>
 
-<!-- ══════════════════════════════════════
-     WHY US
-══════════════════════════════════════ -->
+<!-- WHY US -->
 <section id="why">
   <div class="section-header"><div><p class="section-eyebrow">Why DriveHub</p><h2 class="section-title">THE DRIVEHUB DIFFERENCE</h2></div></div>
   <div class="why-grid">
@@ -624,9 +608,7 @@ ob_end_flush();
   </div>
 </section>
 
-<!-- ══════════════════════════════════════
-     NEWSLETTER
-══════════════════════════════════════ -->
+<!-- NEWSLETTER -->
 <div class="newsletter">
   <div class="newsletter-inner">
     <span class="section-eyebrow">Stay in the Loop</span>
@@ -639,9 +621,7 @@ ob_end_flush();
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     FOOTER
-══════════════════════════════════════ -->
+<!-- FOOTER -->
 <footer>
   <div class="footer-top">
     <div class="footer-brand">
@@ -658,15 +638,13 @@ ob_end_flush();
   </div>
 </footer>
 
-<!-- ══════════════════════════════════════
-     MODAL
-══════════════════════════════════════ -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal" id="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-img" id="modalImg">
       <svg class="car-img-icon" width="100" height="62" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
-      <span class="car-img-label">Add Your Image</span>
+      <span class="car-img-label">No Image</span>
     </div>
     <div class="modal-body">
       <div class="modal-brand" id="modalBrand">Brand</div>
@@ -704,18 +682,14 @@ ob_end_flush();
     document.getElementById('modalOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
-
   function closeModal() {
     document.getElementById('modalOverlay').classList.remove('open');
     document.body.style.overflow = '';
   }
-
   function closeModalOutside(e) {
     if (e.target === document.getElementById('modalOverlay')) closeModal();
   }
-
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-
   const sections = document.querySelectorAll('section[id], div[id]');
   window.addEventListener('scroll', () => {
     let current = '';

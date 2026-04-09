@@ -131,9 +131,92 @@ ob_end_flush();
     section { padding: 100px 80px; }
     .section-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
     .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 4vw, 56px); color: var(--white); letter-spacing: 0.03em; line-height: 1; }
-    .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; }
+    .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; gap: 24px; flex-wrap: wrap; }
     .view-all { font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; white-space: nowrap; }
     .view-all:hover { color: var(--red); border-color: var(--red); }
+
+    /* ── SEARCH FILTER BAR ── */
+    .search-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 1;
+      max-width: 780px;
+    }
+    .search-filter-bar .sf-input {
+      flex: 1;
+      min-width: 160px;
+      padding: 10px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-filter-bar .sf-input::placeholder { color: #444; }
+    .search-filter-bar .sf-input:focus { border-color: rgba(232,52,26,0.5); }
+    .search-filter-bar .sf-select {
+      padding: 10px 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+    .search-filter-bar .sf-select:focus { border-color: rgba(232,52,26,0.5); }
+    .search-filter-bar .sf-select option { background: #1c1c1c; }
+    .sf-btn {
+      padding: 10px 20px;
+      background: var(--red);
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .sf-btn:hover { background: var(--red-dark); }
+    .sf-reset {
+      padding: 10px 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .sf-reset:hover { border-color: var(--border-hover); color: var(--text); }
+    .sf-results-count {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-top: 6px;
+      width: 100%;
+    }
+    .sf-results-count span { color: var(--red); font-weight: 500; }
 
     /* ── CATEGORIES ── */
     #categories { background: var(--off-black); padding: 80px; }
@@ -142,6 +225,7 @@ ob_end_flush();
     .car-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2px; }
     .car-card { background: var(--card); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: border-color 0.25s, transform 0.25s; position: relative; }
     .car-card:hover { border-color: var(--red); transform: translateY(-3px); z-index: 2; }
+    .car-card.hidden { display: none; }
     .car-badge { position: absolute; top: 14px; left: 14px; z-index: 3; padding: 4px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; border-radius: 3px; }
     .badge-new { background: var(--red); color: #fff; }
     .badge-hot { background: #e8891a; color: #fff; }
@@ -171,6 +255,7 @@ ob_end_flush();
     .empty-state-icon { opacity: 0.15; margin-bottom: 20px; }
     .empty-state-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
     .empty-state-desc { font-size: 13px; color: #333; font-weight: 300; }
+    #noResultsState { display: none; }
 
     /* ── FEATURED ── */
     #featured { background: var(--black); }
@@ -277,10 +362,11 @@ ob_end_flush();
     .modal-overlay.open { opacity: 1; pointer-events: all; }
     .modal { background: var(--panel); border: 1px solid var(--border); width: 90%; max-width: 760px; max-height: 90vh; overflow-y: auto; border-radius: 4px; transform: translateY(20px); transition: transform 0.3s; position: relative; }
     .modal-overlay.open .modal { transform: translateY(0); }
-    .modal-close { position: absolute; top: 16px; right: 16px; background: #1c1c1c; border: 1px solid var(--border); color: var(--muted); cursor: pointer; width: 32px; height: 32px; border-radius: 4px; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: color 0.2s, border-color 0.2s; }
+    .modal-close { position: absolute; top: 16px; right: 16px; background: #1c1c1c; border: 1px solid var(--border); color: var(--muted); cursor: pointer; width: 32px; height: 32px; border-radius: 4px; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: color 0.2s, border-color 0.2s; z-index: 10; }
     .modal-close:hover { color: var(--white); border-color: var(--border-hover); }
-    .modal-img { width: 100%; aspect-ratio: 16/9; background: #111; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--border); overflow: hidden; }
-    .modal-img img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-img { width: 100%; aspect-ratio: 16/9; background: #111; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--border); overflow: hidden; position: relative; }
+    .modal-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .modal-img .placeholder-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
     .modal-body { padding: 32px 36px 36px; }
     .modal-brand { font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 4px; }
     .modal-name { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--white); letter-spacing: 0.04em; margin-bottom: 12px; }
@@ -304,6 +390,11 @@ ob_end_flush();
       .why-grid { grid-template-columns: repeat(2,1fr); }
       .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
       .ai-inner { grid-template-columns: 1fr; gap: 48px; }
+    }
+    @media (max-width: 900px) {
+      .search-filter-bar { flex-direction: column; align-items: stretch; }
+      .search-filter-bar .sf-input,
+      .search-filter-bar .sf-select { width: 100%; }
     }
     @media (max-width: 768px) {
       nav { padding: 0 24px; }
@@ -398,9 +489,53 @@ ob_end_flush();
       <p class="section-eyebrow">Shop by Type</p>
       <h2 class="section-title">BROWSE CATEGORIES</h2>
     </div>
-    <a href="#" class="view-all">View All Listings →</a>
+    <!-- SEARCH & FILTER BAR -->
+    <div class="search-filter-bar" id="searchFilterBar">
+      <input class="sf-input" type="text" id="sfSearch" placeholder="Search make, model…" oninput="applyFilters()"/>
+      <select class="sf-select" id="sfCategory" onchange="applyFilters()">
+        <option value="">All Categories</option>
+        <option value="4x4">4X4 / SUV</option>
+        <option value="sedan">Sedan</option>
+        <option value="coupe">2 Doors / Coupe</option>
+        <option value="van">Bus &amp; Van</option>
+        <option value="motorcycle">Motorcycle</option>
+        <option value="electric">Electric</option>
+        <option value="pickup">Pickup</option>
+        <option value="hatchback">Hatchback</option>
+      </select>
+      <select class="sf-select" id="sfYear" onchange="applyFilters()">
+        <option value="">All Years</option>
+        <?php
+          $currentYear = date('Y');
+          for ($y = $currentYear; $y >= 1990; $y--) {
+            echo "<option value=\"$y\">$y</option>";
+          }
+        ?>
+      </select>
+      <select class="sf-select" id="sfBrand" onchange="applyFilters()">
+        <option value="">All Brands</option>
+        <?php
+          $brands = array_unique(array_column($db_cars, 'brand'));
+          sort($brands);
+          foreach ($brands as $b) {
+            echo '<option value="' . htmlspecialchars(strtolower($b)) . '">' . htmlspecialchars($b) . '</option>';
+          }
+        ?>
+      </select>
+      <button class="sf-btn" onclick="applyFilters()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        SEARCH
+      </button>
+      <button class="sf-reset" onclick="resetFilters()">Reset</button>
+    </div>
   </div>
-  <div class="car-grid">
+
+  <!-- Results count -->
+  <div class="sf-results-count" id="sfResultsCount" style="margin-bottom:20px;display:none;">
+    Showing <span id="sfCount">0</span> result(s)
+  </div>
+
+  <div class="car-grid" id="carGrid">
     <?php if (!empty($db_cars)): ?>
       <?php foreach ($db_cars as $car):
         $bc = ''; $bl = '';
@@ -415,12 +550,18 @@ ob_end_flush();
         $ee = addslashes(htmlspecialchars($car['engine'] ?: '–'));
         $ew = addslashes(htmlspecialchars($car['power']  ?: '–'));
         $ev = addslashes(htmlspecialchars($car['drive']  ?: '–'));
+        $ei = addslashes(htmlspecialchars($car['image_path'] ?: ''));
       ?>
-      <div class="car-card" onclick="openModal('<?php echo $en;?>','<?php echo $eb;?>','<?php echo $ed;?>','<?php echo $ec;?>','<?php echo $ep;?>','<?php echo $ee;?>','<?php echo $ew;?>','<?php echo $ev;?>','<?php echo $car['year'];?> | <?php echo number_format($car['kms']);?> km','<?php echo $bc;?>')">
+      <div class="car-card"
+           data-name="<?php echo strtolower(htmlspecialchars($car['car_name'] . ' ' . $car['brand'])); ?>"
+           data-category="<?php echo strtolower(htmlspecialchars($car['category'] ?: '')); ?>"
+           data-year="<?php echo $car['year']; ?>"
+           data-brand="<?php echo strtolower(htmlspecialchars($car['brand'])); ?>"
+           onclick="openModal('<?php echo $en;?>','<?php echo $eb;?>','<?php echo $ed;?>','<?php echo $ec;?>','<?php echo $ep;?>','<?php echo $ee;?>','<?php echo $ew;?>','<?php echo $ev;?>','<?php echo $car['year'];?> | <?php echo number_format($car['kms']);?> km','<?php echo $bc;?>','<?php echo $ei;?>')">
         <?php if ($bl): ?><span class="car-badge <?php echo $bc;?>"><?php echo $bl;?></span><?php endif; ?>
         <div class="car-img">
           <?php if ($car['image_path'] && file_exists($car['image_path'])): ?>
-            <img src="<?php echo htmlspecialchars($car['image_path']);?>" alt=""/>
+            <img src="<?php echo htmlspecialchars($car['image_path']);?>" alt="<?php echo htmlspecialchars($car['car_name']); ?>"/>
           <?php else: ?>
             <svg class="car-img-icon" width="80" height="50" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
             <span class="car-img-label">No Image</span>
@@ -449,6 +590,12 @@ ob_end_flush();
         </div>
       </div>
       <?php endforeach; ?>
+      <!-- No results state -->
+      <div class="empty-state" id="noResultsState">
+        <svg class="empty-state-icon" width="64" height="64" fill="none" stroke="white" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="empty-state-title">No Results Found</div>
+        <div class="empty-state-desc">Try adjusting your filters or search term.</div>
+      </div>
     <?php else: ?>
       <div class="empty-state">
         <svg class="empty-state-icon" width="80" height="80" fill="none" stroke="white" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19 17H5c-1 0-2-.9-2-2V7c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M3 11h18"/></svg>
@@ -472,6 +619,7 @@ ob_end_flush();
     <?php
     $f  = $featured_cars[0];
     $bc = $f['badge']==='new' ? 'badge-new' : ($f['badge']==='hot' ? 'badge-hot' : ($f['badge']==='sale' ? 'badge-sale' : ''));
+    $fi = addslashes(htmlspecialchars($f['image_path'] ?: ''));
     ?>
     <div class="featured-main car-card" onclick="openModal(
       '<?php echo addslashes(htmlspecialchars($f['car_name']));?>',
@@ -483,11 +631,12 @@ ob_end_flush();
       '<?php echo addslashes(htmlspecialchars($f['power']?:'–'));?>',
       '<?php echo addslashes(htmlspecialchars($f['drive']?:'–'));?>',
       '<?php echo $f['year'];?> | <?php echo number_format($f['kms']);?> km',
-      '<?php echo $bc;?>')">
+      '<?php echo $bc;?>',
+      '<?php echo $fi;?>')">
       <span class="featured-tag">FEATURED</span>
       <div class="car-img">
         <?php if ($f['image_path'] && file_exists($f['image_path'])): ?>
-          <img src="<?php echo htmlspecialchars($f['image_path']);?>" alt=""/>
+          <img src="<?php echo htmlspecialchars($f['image_path']);?>" alt="<?php echo htmlspecialchars($f['car_name']); ?>"/>
         <?php else: ?>
           <svg class="car-img-icon" width="120" height="75" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
           <span class="car-img-label">No Image</span>
@@ -514,6 +663,7 @@ ob_end_flush();
       if (!isset($featured_cars[$i])) continue;
       $s  = $featured_cars[$i];
       $sbc = $s['badge']==='new' ? 'badge-new' : ($s['badge']==='hot' ? 'badge-hot' : ($s['badge']==='sale' ? 'badge-sale' : ''));
+      $si = addslashes(htmlspecialchars($s['image_path'] ?: ''));
     ?>
     <div class="featured-side car-card" onclick="openModal(
       '<?php echo addslashes(htmlspecialchars($s['car_name']));?>',
@@ -525,10 +675,11 @@ ob_end_flush();
       '<?php echo addslashes(htmlspecialchars($s['power']?:'–'));?>',
       '<?php echo addslashes(htmlspecialchars($s['drive']?:'–'));?>',
       '<?php echo $s['year'];?> | <?php echo number_format($s['kms']);?> km',
-      '<?php echo $sbc;?>')">
+      '<?php echo $sbc;?>',
+      '<?php echo $si;?>')">
       <div class="car-img">
         <?php if ($s['image_path'] && file_exists($s['image_path'])): ?>
-          <img src="<?php echo htmlspecialchars($s['image_path']);?>" alt=""/>
+          <img src="<?php echo htmlspecialchars($s['image_path']);?>" alt="<?php echo htmlspecialchars($s['car_name']); ?>"/>
         <?php else: ?>
           <svg class="car-img-icon" width="80" height="50" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
           <span class="car-img-label">No Image</span>
@@ -633,7 +784,7 @@ ob_end_flush();
     <div><div class="footer-col-title">Support</div><ul class="footer-links"><li><a href="help.html">Help Center</a></li><li><a href="Contactus.html">Contact Us</a></li><li><a href="Support.html">Buyer Guide</a></li><li><a href="Support.html">Seller Guide</a></li><li><a href="Support.html">Report an Issue</a></li><li><a href="predictor.html">AI Predictor</a></li></ul></div>
   </div>
   <div class="footer-bottom">
-    <div class="footer-copy">© 2026 <span>DriveHub</span>. All rights reserved.</div>
+    <div class="footer-copy">©️ 2026 <span>DriveHub</span>. All rights reserved.</div>
     <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Policy</a></div>
   </div>
 </footer>
@@ -643,8 +794,7 @@ ob_end_flush();
   <div class="modal" id="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-img" id="modalImg">
-      <svg class="car-img-icon" width="100" height="62" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
-      <span class="car-img-label">No Image</span>
+      <!-- image or placeholder injected by JS -->
     </div>
     <div class="modal-body">
       <div class="modal-brand" id="modalBrand">Brand</div>
@@ -666,22 +816,34 @@ ob_end_flush();
 </div>
 
 <script>
-  function openModal(name, brand, desc, cat, price, spec1, spec2, spec3, spec4, badgeClass) {
+  /* ── MODAL ── */
+  function openModal(name, brand, desc, cat, price, spec1, spec2, spec3, spec4, badgeClass, imagePath) {
     document.getElementById('modalName').textContent  = name;
     document.getElementById('modalBrand').textContent = brand;
     document.getElementById('modalDesc').textContent  = desc;
     document.getElementById('modalCat').textContent   = cat;
     document.getElementById('modalPrice').innerHTML   = price + ' <span>/ negotiable</span>';
-    const specLabels = ['Engine','Power','Drive','Year'];
+
+    // ── IMAGE: show real image or fallback placeholder ──
+    const imgContainer = document.getElementById('modalImg');
+    if (imagePath && imagePath.trim() !== '') {
+      imgContainer.innerHTML = '<img src="' + imagePath + '" alt="' + name + '" onerror="this.parentNode.innerHTML=\'<div class=\\\'placeholder-wrap\\\'><svg class=\\\'car-img-icon\\\' width=\\\'100\\\' height=\\\'62\\\' viewBox=\\\'0 0 800 400\\\' fill=\\\'white\\\'><path d=\\\'M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z\\\'/><circle cx=\\\'200\\\' cy=\\\'300\\\' r=\\\'44\\\'/><circle cx=\\\'620\\\' cy=\\\'300\\\' r=\\\'44\\\'/><circle cx=\\\'200\\\' cy=\\\'300\\\' r=\\\'28\\\' fill=\\\'#111\\\'/><circle cx=\\\'620\\\' cy=\\\'300\\\' r=\\\'28\\\' fill=\\\'#111\\\'/></svg><span class=\\\'car-img-label\\\'>No Image</span></div>\'"/>';
+    } else {
+      imgContainer.innerHTML = '<div class="placeholder-wrap"><svg class="car-img-icon" width="100" height="62" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg><span class="car-img-label">No Image</span></div>';
+    }
+
+    const specLabels = ['Engine','Power','Drive','Year/KM'];
     const specVals   = [spec1, spec2, spec3, spec4];
     document.getElementById('modalSpecs').innerHTML = specVals.map((v,i) => `
       <div class="modal-spec">
         <div class="modal-spec-val">${v}</div>
         <div class="modal-spec-key">${specLabels[i]}</div>
       </div>`).join('');
+
     document.getElementById('modalOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
+
   function closeModal() {
     document.getElementById('modalOverlay').classList.remove('open');
     document.body.style.overflow = '';
@@ -690,6 +852,58 @@ ob_end_flush();
     if (e.target === document.getElementById('modalOverlay')) closeModal();
   }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  /* ── SEARCH / FILTER ── */
+  function applyFilters() {
+    const search   = document.getElementById('sfSearch').value.trim().toLowerCase();
+    const category = document.getElementById('sfCategory').value.toLowerCase();
+    const year     = document.getElementById('sfYear').value;
+    const brand    = document.getElementById('sfBrand').value.toLowerCase();
+
+    const cards = document.querySelectorAll('#carGrid .car-card:not(#noResultsState)');
+    let visible = 0;
+
+    cards.forEach(card => {
+      const cardName     = (card.dataset.name     || '').toLowerCase();
+      const cardCategory = (card.dataset.category || '').toLowerCase();
+      const cardYear     = (card.dataset.year     || '');
+      const cardBrand    = (card.dataset.brand    || '').toLowerCase();
+
+      const matchSearch   = !search   || cardName.includes(search);
+      const matchCategory = !category || cardCategory.includes(category);
+      const matchYear     = !year     || cardYear === year;
+      const matchBrand    = !brand    || cardBrand === brand;
+
+      const show = matchSearch && matchCategory && matchYear && matchBrand;
+      card.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+
+    // show/hide no results state
+    const noRes = document.getElementById('noResultsState');
+    const countEl = document.getElementById('sfResultsCount');
+    const countNum = document.getElementById('sfCount');
+
+    const isFiltering = search || category || year || brand;
+    if (isFiltering) {
+      noRes.style.display = visible === 0 ? 'flex' : 'none';
+      countEl.style.display = 'block';
+      countNum.textContent = visible;
+    } else {
+      noRes.style.display = 'none';
+      countEl.style.display = 'none';
+    }
+  }
+
+  function resetFilters() {
+    document.getElementById('sfSearch').value   = '';
+    document.getElementById('sfCategory').value = '';
+    document.getElementById('sfYear').value     = '';
+    document.getElementById('sfBrand').value    = '';
+    applyFilters();
+  }
+
+  /* ── NAV ACTIVE STATE ── */
   const sections = document.querySelectorAll('section[id], div[id]');
   window.addEventListener('scroll', () => {
     let current = '';

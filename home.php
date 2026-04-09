@@ -9,6 +9,62 @@ if (!isset($_SESSION['user_id'])) {
 
 include 'db.php';
 
+$user_id = (int)($_SESSION['user_id'] ?? 0);
+
+/* ── Favorites table + AJAX handlers ── */
+$conn->query("CREATE TABLE IF NOT EXISTS favorites (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    car_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_user_car (user_id, car_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_car_id (car_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_favorite') {
+    header('Content-Type: application/json');
+
+    $car_id = isset($_POST['car_id']) ? (int)$_POST['car_id'] : 0;
+    if ($car_id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid car selected.']);
+        exit();
+    }
+
+    $check = $conn->prepare("SELECT id FROM favorites WHERE user_id = ? AND car_id = ? LIMIT 1");
+    $check->bind_param("ii", $user_id, $car_id);
+    $check->execute();
+    $existing = $check->get_result();
+    $isFavorite = $existing && $existing->num_rows > 0;
+    $check->close();
+
+    if ($isFavorite) {
+        $delete = $conn->prepare("DELETE FROM favorites WHERE user_id = ? AND car_id = ?");
+        $delete->bind_param("ii", $user_id, $car_id);
+        $success = $delete->execute();
+        $delete->close();
+
+        echo json_encode([
+            'success' => $success,
+            'saved'   => false,
+            'message' => $success ? 'Removed from favorites.' : 'Could not remove favorite.'
+        ]);
+        exit();
+    } else {
+        $insert = $conn->prepare("INSERT INTO favorites (user_id, car_id) VALUES (?, ?)");
+        $insert->bind_param("ii", $user_id, $car_id);
+        $success = $insert->execute();
+        $insert->close();
+
+        echo json_encode([
+            'success' => $success,
+            'saved'   => (bool)$success,
+            'message' => $success ? 'Saved to favorites.' : 'Could not save favorite.'
+        ]);
+        exit();
+    }
+}
+
 /* ── Fetch admin-added cars from DB ── */
 $db_cars = [];
 $result  = $conn->query("SELECT * FROM cars ORDER BY created_at DESC");
@@ -22,6 +78,25 @@ $feat_result = $conn->query("SELECT * FROM cars WHERE featured = 1 ORDER BY crea
 if ($feat_result) {
     while ($row = $feat_result->fetch_assoc()) $featured_cars[] = $row;
 }
+
+/* ── Fetch current user's favorites ── */
+$favorite_ids = [];
+$favorite_cars = [];
+$fav_stmt = $conn->prepare("SELECT c.* FROM favorites f INNER JOIN cars c ON c.id = f.car_id WHERE f.user_id = ? ORDER BY f.created_at DESC");
+if ($fav_stmt) {
+    $fav_stmt->bind_param("i", $user_id);
+    $fav_stmt->execute();
+    $fav_result = $fav_stmt->get_result();
+    if ($fav_result) {
+        while ($fav_row = $fav_result->fetch_assoc()) {
+            $favorite_cars[] = $fav_row;
+            $favorite_ids[] = (int)$fav_row['id'];
+        }
+    }
+    $fav_stmt->close();
+}
+$favorite_count = count($favorite_ids);
+
 ob_end_flush();
 ?>
 <!DOCTYPE html>
@@ -100,6 +175,231 @@ ob_end_flush();
     .nav-profile:hover { background: rgba(255,255,255,0.06); }
     .nav-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #fff; flex-shrink: 0; }
     .nav-profile-name { font-size: 13px; font-weight: 500; color: var(--text); }
+
+    .favorites-toggle {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .favorites-toggle:hover,
+    .favorites-toggle.active {
+      border-color: rgba(232,52,26,0.35);
+      background: rgba(232,52,26,0.12);
+      color: #fff;
+    }
+    .favorites-count {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: var(--red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+      border: 2px solid var(--black);
+    }
+
+    .favorites-sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+      z-index: 190;
+    }
+    .favorites-sidebar-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .favorites-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(420px, 92vw);
+      height: 100vh;
+      background: linear-gradient(180deg, #131313 0%, #0d0d0d 100%);
+      border-left: 1px solid var(--border);
+      box-shadow: -14px 0 40px rgba(0,0,0,0.35);
+      z-index: 210;
+      transform: translateX(100%);
+      transition: transform 0.28s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .favorites-sidebar.open { transform: translateX(0); }
+    .favorites-sidebar-header {
+      padding: 24px 22px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .favorites-sidebar-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.08em;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+    .favorites-sidebar-sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .favorites-sidebar-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 18px;
+    }
+    .favorites-sidebar-close:hover {
+      border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+    }
+    .favorites-sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .favorite-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .favorite-item:hover {
+      border-color: rgba(232,52,26,0.3);
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.05);
+    }
+    .favorite-thumb {
+      width: 92px;
+      min-width: 92px;
+      height: 72px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #101010;
+      border: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .favorite-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .favorite-thumb svg {
+      width: 42px;
+      height: 28px;
+      opacity: 0.15;
+    }
+    .favorite-item-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .favorite-item-brand {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 4px;
+    }
+    .favorite-item-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.04em;
+      color: var(--white);
+      margin-bottom: 6px;
+      line-height: 1;
+    }
+    .favorite-item-meta {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .favorite-item-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: var(--white);
+      letter-spacing: 0.04em;
+    }
+    .favorites-empty {
+      margin: auto 0;
+      text-align: center;
+      padding: 32px 18px;
+      border: 1px dashed rgba(255,255,255,0.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.02);
+    }
+    .favorites-empty svg {
+      opacity: 0.18;
+      margin-bottom: 16px;
+    }
+    .favorites-empty-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 0.08em;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+    .favorites-empty-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translateX(-50%) translateY(18px);
+      background: #171717;
+      color: #fff;
+      border: 1px solid rgba(232,52,26,0.25);
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 260;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
 
     /* ── HERO ── */
     .hero { position: relative; height: 100vh; min-height: 600px; display: flex; align-items: flex-start; overflow: hidden; }
@@ -399,6 +699,11 @@ ob_end_flush();
     @media (max-width: 768px) {
       nav { padding: 0 24px; }
       .nav-links { display: none; }
+      .nav-cta { gap: 8px; }
+      .nav-profile-name { display: none; }
+      .nav-logout-btn { padding: 8px 12px; }
+      .favorites-sidebar-header { padding: 20px 18px 16px; }
+      .favorite-thumb { width: 82px; min-width: 82px; height: 68px; }
       section, #categories, .newsletter, footer { padding: 60px 24px; }
       .hero-content { padding: 120px 24px 0; }
       .hero-stats { display: none; }
@@ -427,7 +732,7 @@ ob_end_flush();
     <li><a href="#featured">Featured</a></li>
     <li><a href="#why">Why Us</a></li>
     <li><a href="predictor.html" style="color: var(--red) !important;">AI Predictor ✦</a></li>
-    <li><a href="#">Contact</a></li>
+    <li><a href="Contactus.html">Contact</a></li>
   </ul>
   <div class="nav-cta">
     <a href="logout.php" class="nav-logout-btn">
@@ -438,6 +743,14 @@ ob_end_flush();
       </svg>
       Logout
     </a>
+
+    <button type="button" class="favorites-toggle" id="favoritesToggle" onclick="toggleFavoritesSidebar()" aria-label="Open favorites">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 21s-6.7-4.35-9.33-8.15C.7 9.98 2.08 5.5 6.24 4.46c2.2-.55 4.47.2 5.76 1.95 1.29-1.75 3.56-2.5 5.76-1.95 4.16 1.04 5.54 5.52 3.57 8.39C18.7 16.65 12 21 12 21z"/>
+      </svg>
+      <span class="favorites-count" id="favoritesCount"><?php echo $favorite_count; ?></span>
+    </button>
+
     <a href="#" class="nav-profile">
       <div class="nav-avatar"><?php echo strtoupper(mb_substr($_SESSION['first_name'], 0, 1)); ?></div>
       <span class="nav-profile-name"><?php echo htmlspecialchars($_SESSION['first_name']); ?></span>
@@ -463,7 +776,9 @@ ob_end_flush();
     <p class="hero-desc">Browse thousands of verified vehicles across every category — from rugged 4x4s to sleek city cars, bikes, and more.</p>
     <div class="hero-actions">
       <button class="hero-btn" onclick="document.getElementById('categories').scrollIntoView({behavior:'smooth'})">BROWSE ALL CARS</button>
-      <button class="hero-btn-ghost">How It Works</button>
+     <button class="hero-btn-ghost" onclick="window.location.href='hiw.html'">
+  How It Works
+</button>
     </div>
   </div>
   <div class="hero-stats">
@@ -557,7 +872,22 @@ ob_end_flush();
            data-category="<?php echo strtolower(htmlspecialchars($car['category'] ?: '')); ?>"
            data-year="<?php echo $car['year']; ?>"
            data-brand="<?php echo strtolower(htmlspecialchars($car['brand'])); ?>"
-           onclick="openModal('<?php echo $en;?>','<?php echo $eb;?>','<?php echo $ed;?>','<?php echo $ec;?>','<?php echo $ep;?>','<?php echo $ee;?>','<?php echo $ew;?>','<?php echo $ev;?>','<?php echo $car['year'];?> | <?php echo number_format($car['kms']);?> km','<?php echo $bc;?>','<?php echo $ei;?>')">
+           data-car-id="<?php echo (int)$car['id']; ?>"
+           onclick="openModal(
+             <?php echo (int)$car['id']; ?>,
+             '<?php echo $en;?>',
+             '<?php echo $eb;?>',
+             '<?php echo $ed;?>',
+             '<?php echo $ec;?>',
+             '<?php echo $ep;?>',
+             '<?php echo $ee;?>',
+             '<?php echo $ew;?>',
+             '<?php echo $ev;?>',
+             '<?php echo $car['year'];?> | <?php echo number_format($car['kms']);?> km',
+             '<?php echo $bc;?>',
+             '<?php echo $ei;?>',
+             <?php echo in_array((int)$car['id'], $favorite_ids, true) ? 'true' : 'false'; ?>
+           )">
         <?php if ($bl): ?><span class="car-badge <?php echo $bc;?>"><?php echo $bl;?></span><?php endif; ?>
         <div class="car-img">
           <?php if ($car['image_path'] && file_exists($car['image_path'])): ?>
@@ -622,6 +952,7 @@ ob_end_flush();
     $fi = addslashes(htmlspecialchars($f['image_path'] ?: ''));
     ?>
     <div class="featured-main car-card" onclick="openModal(
+      <?php echo (int)$f['id']; ?>,
       '<?php echo addslashes(htmlspecialchars($f['car_name']));?>',
       '<?php echo addslashes(htmlspecialchars($f['brand']));?>',
       '<?php echo addslashes(htmlspecialchars($f['description']));?>',
@@ -632,7 +963,8 @@ ob_end_flush();
       '<?php echo addslashes(htmlspecialchars($f['drive']?:'–'));?>',
       '<?php echo $f['year'];?> | <?php echo number_format($f['kms']);?> km',
       '<?php echo $bc;?>',
-      '<?php echo $fi;?>')">
+      '<?php echo $fi;?>',
+      <?php echo in_array((int)$f['id'], $favorite_ids, true) ? 'true' : 'false'; ?>)">
       <span class="featured-tag">FEATURED</span>
       <div class="car-img">
         <?php if ($f['image_path'] && file_exists($f['image_path'])): ?>
@@ -666,6 +998,7 @@ ob_end_flush();
       $si = addslashes(htmlspecialchars($s['image_path'] ?: ''));
     ?>
     <div class="featured-side car-card" onclick="openModal(
+      <?php echo (int)$s['id']; ?>,
       '<?php echo addslashes(htmlspecialchars($s['car_name']));?>',
       '<?php echo addslashes(htmlspecialchars($s['brand']));?>',
       '<?php echo addslashes(htmlspecialchars($s['description']));?>',
@@ -676,7 +1009,8 @@ ob_end_flush();
       '<?php echo addslashes(htmlspecialchars($s['drive']?:'–'));?>',
       '<?php echo $s['year'];?> | <?php echo number_format($s['kms']);?> km',
       '<?php echo $sbc;?>',
-      '<?php echo $si;?>')">
+      '<?php echo $si;?>',
+      <?php echo in_array((int)$s['id'], $favorite_ids, true) ? 'true' : 'false'; ?>)">
       <div class="car-img">
         <?php if ($s['image_path'] && file_exists($s['image_path'])): ?>
           <img src="<?php echo htmlspecialchars($s['image_path']);?>" alt="<?php echo htmlspecialchars($s['car_name']); ?>"/>
@@ -789,6 +1123,73 @@ ob_end_flush();
   </div>
 </footer>
 
+<div class="favorites-sidebar-overlay" id="favoritesSidebarOverlay" onclick="closeFavoritesSidebar()"></div>
+<aside class="favorites-sidebar" id="favoritesSidebar">
+  <div class="favorites-sidebar-header">
+    <div>
+      <div class="favorites-sidebar-title">MY FAVORITES</div>
+      <div class="favorites-sidebar-sub">Saved cars for <?php echo htmlspecialchars($_SESSION['first_name']); ?>. Click any card to reopen it.</div>
+    </div>
+    <button type="button" class="favorites-sidebar-close" onclick="closeFavoritesSidebar()">✕</button>
+  </div>
+  <div class="favorites-sidebar-body" id="favoritesSidebarBody">
+    <?php if (!empty($favorite_cars)): ?>
+      <?php foreach ($favorite_cars as $fav):
+        $fav_name = addslashes(htmlspecialchars($fav['car_name']));
+        $fav_brand = addslashes(htmlspecialchars($fav['brand']));
+        $fav_desc = addslashes(htmlspecialchars($fav['description']));
+        $fav_cat = addslashes(htmlspecialchars($fav['category']));
+        $fav_price = addslashes(htmlspecialchars($fav['price']));
+        $fav_engine = addslashes(htmlspecialchars($fav['engine'] ?: '–'));
+        $fav_power = addslashes(htmlspecialchars($fav['power'] ?: '–'));
+        $fav_drive = addslashes(htmlspecialchars($fav['drive'] ?: '–'));
+        $fav_img = addslashes(htmlspecialchars($fav['image_path'] ?: ''));
+        $fav_meta = trim(($fav['year'] ? $fav['year'] : 'Year n/a') . ' • ' . number_format((int)$fav['kms']) . ' km');
+      ?>
+      <div class="favorite-item" id="favorite-item-<?php echo (int)$fav['id']; ?>" onclick="openModal(
+        <?php echo (int)$fav['id']; ?>,
+        '<?php echo $fav_name; ?>',
+        '<?php echo $fav_brand; ?>',
+        '<?php echo $fav_desc; ?>',
+        '<?php echo $fav_cat; ?>',
+        '<?php echo $fav_price; ?>',
+        '<?php echo $fav_engine; ?>',
+        '<?php echo $fav_power; ?>',
+        '<?php echo $fav_drive; ?>',
+        '<?php echo addslashes($fav_meta); ?>',
+        '',
+        '<?php echo $fav_img; ?>',
+        true
+      )">
+        <div class="favorite-thumb">
+          <?php if ($fav['image_path'] && file_exists($fav['image_path'])): ?>
+            <img src="<?php echo htmlspecialchars($fav['image_path']); ?>" alt="<?php echo htmlspecialchars($fav['car_name']); ?>">
+          <?php else: ?>
+            <svg viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
+          <?php endif; ?>
+        </div>
+        <div class="favorite-item-body">
+          <div class="favorite-item-brand"><?php echo htmlspecialchars($fav['brand']); ?></div>
+          <div class="favorite-item-name"><?php echo htmlspecialchars($fav['car_name']); ?></div>
+          <div class="favorite-item-meta"><?php echo htmlspecialchars($fav_meta); ?></div>
+          <div class="favorite-item-price"><?php echo htmlspecialchars($fav['price']); ?></div>
+        </div>
+      </div>
+      <?php endforeach; ?>
+    <?php else: ?>
+      <div class="favorites-empty" id="favoritesEmptyState">
+        <svg width="56" height="56" fill="none" stroke="white" stroke-width="1.6" viewBox="0 0 24 24">
+          <path d="M12 21s-6.7-4.35-9.33-8.15C.7 9.98 2.08 5.5 6.24 4.46c2.2-.55 4.47.2 5.76 1.95 1.29-1.75 3.56-2.5 5.76-1.95 4.16 1.04 5.54 5.52 3.57 8.39C18.7 16.65 12 21 12 21z"/>
+        </svg>
+        <div class="favorites-empty-title">No favorites yet</div>
+        <div class="favorites-empty-desc">Open any car and press Save to build your favorite collection.</div>
+      </div>
+    <?php endif; ?>
+  </div>
+</aside>
+
+<div class="toast" id="toastMessage"></div>
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal" id="modal">
@@ -807,8 +1208,8 @@ ob_end_flush();
           <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="modalCat">Category</div>
         </div>
         <div class="modal-actions">
-          <button class="modal-btn-sec">Save ♡</button>
-          <button class="modal-btn-primary">Contact Seller</button>
+          <button class="modal-btn-sec" id="saveFavoriteBtn" type="button" onclick="toggleFavorite(event)">Save ♡</button>
+          <button class="modal-btn-primary" type="button">Contact Seller</button>
         </div>
       </div>
     </div>
@@ -816,20 +1217,143 @@ ob_end_flush();
 </div>
 
 <script>
+  let currentModalCarId = null;
+  let currentModalFavorite = false;
+
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, function (m) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]);
+    });
+  }
+
+  function getPlaceholderThumb() {
+    return '<svg viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>';
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById('toastMessage');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  function updateSaveButtonState(isFavorite) {
+    const btn = document.getElementById('saveFavoriteBtn');
+    currentModalFavorite = !!isFavorite;
+    btn.textContent = currentModalFavorite ? 'Saved ♥' : 'Save ♡';
+    btn.style.borderColor = currentModalFavorite ? 'rgba(232,52,26,0.35)' : '';
+    btn.style.background = currentModalFavorite ? 'rgba(232,52,26,0.1)' : '';
+    btn.style.color = currentModalFavorite ? '#fff' : '';
+  }
+
+  function updateFavoriteCountDisplay() {
+    const count = document.querySelectorAll('.favorite-item').length;
+    document.getElementById('favoritesCount').textContent = count;
+  }
+
+  function ensureFavoritesEmptyState() {
+    const body = document.getElementById('favoritesSidebarBody');
+    const items = body.querySelectorAll('.favorite-item');
+    let emptyState = document.getElementById('favoritesEmptyState');
+
+    if (!items.length) {
+      if (!emptyState) {
+        emptyState = document.createElement('div');
+        emptyState.className = 'favorites-empty';
+        emptyState.id = 'favoritesEmptyState';
+        emptyState.innerHTML = `
+          <svg width="56" height="56" fill="none" stroke="white" stroke-width="1.6" viewBox="0 0 24 24">
+            <path d="M12 21s-6.7-4.35-9.33-8.15C.7 9.98 2.08 5.5 6.24 4.46c2.2-.55 4.47.2 5.76 1.95 1.29-1.75 3.56-2.5 5.76-1.95 4.16 1.04 5.54 5.52 3.57 8.39C18.7 16.65 12 21 12 21z"/>
+          </svg>
+          <div class="favorites-empty-title">No favorites yet</div>
+          <div class="favorites-empty-desc">Open any car and press Save to build your favorite collection.</div>`;
+        body.appendChild(emptyState);
+      }
+    } else if (emptyState) {
+      emptyState.remove();
+    }
+
+    updateFavoriteCountDisplay();
+  }
+
+  function buildFavoriteItem(car) {
+    const div = document.createElement('div');
+    div.className = 'favorite-item';
+    div.id = 'favorite-item-' + car.id;
+
+    const meta = `${car.spec4 || ''}`;
+    div.onclick = function () {
+      openModal(car.id, car.name, car.brand, car.desc, car.cat, car.price, car.spec1, car.spec2, car.spec3, car.spec4, '', car.imagePath, true);
+    };
+
+    div.innerHTML = `
+      <div class="favorite-thumb">
+        ${car.imagePath ? `<img src="${escapeHtml(car.imagePath)}" alt="${escapeHtml(car.name)}" onerror="this.parentNode.innerHTML='${getPlaceholderThumb().replace(/'/g, "&#39;")}'">` : getPlaceholderThumb()}
+      </div>
+      <div class="favorite-item-body">
+        <div class="favorite-item-brand">${escapeHtml(car.brand)}</div>
+        <div class="favorite-item-name">${escapeHtml(car.name)}</div>
+        <div class="favorite-item-meta">${escapeHtml(meta)}</div>
+        <div class="favorite-item-price">${escapeHtml(car.price)}</div>
+      </div>
+    `;
+    return div;
+  }
+
+  function addFavoriteToSidebar(car) {
+    if (document.getElementById('favorite-item-' + car.id)) return;
+
+    const body = document.getElementById('favoritesSidebarBody');
+    const item = buildFavoriteItem(car);
+    const emptyState = document.getElementById('favoritesEmptyState');
+    if (emptyState) emptyState.remove();
+    body.prepend(item);
+    updateFavoriteCountDisplay();
+  }
+
+  function removeFavoriteFromSidebar(carId) {
+    const item = document.getElementById('favorite-item-' + carId);
+    if (item) item.remove();
+    ensureFavoritesEmptyState();
+  }
+
+  function markCarCardsFavorite(carId, isFavorite) {
+    document.querySelectorAll('[data-car-id="' + carId + '"]').forEach(card => {
+      card.dataset.favorite = isFavorite ? '1' : '0';
+    });
+  }
+
+  function getCurrentModalCarData() {
+    return {
+      id: currentModalCarId,
+      name: document.getElementById('modalName').textContent,
+      brand: document.getElementById('modalBrand').textContent,
+      desc: document.getElementById('modalDesc').textContent,
+      cat: document.getElementById('modalCat').textContent,
+      price: document.getElementById('modalPrice').childNodes[0]?.textContent?.trim() || document.getElementById('modalPrice').textContent.trim(),
+      spec1: document.querySelectorAll('#modalSpecs .modal-spec-val')[0]?.textContent || '',
+      spec2: document.querySelectorAll('#modalSpecs .modal-spec-val')[1]?.textContent || '',
+      spec3: document.querySelectorAll('#modalSpecs .modal-spec-val')[2]?.textContent || '',
+      spec4: document.querySelectorAll('#modalSpecs .modal-spec-val')[3]?.textContent || '',
+      imagePath: document.querySelector('#modalImg img')?.getAttribute('src') || ''
+    };
+  }
+
   /* ── MODAL ── */
-  function openModal(name, brand, desc, cat, price, spec1, spec2, spec3, spec4, badgeClass, imagePath) {
+  function openModal(carId, name, brand, desc, cat, price, spec1, spec2, spec3, spec4, badgeClass, imagePath, isFavorite = false) {
+    currentModalCarId = carId;
     document.getElementById('modalName').textContent  = name;
     document.getElementById('modalBrand').textContent = brand;
     document.getElementById('modalDesc').textContent  = desc;
     document.getElementById('modalCat').textContent   = cat;
     document.getElementById('modalPrice').innerHTML   = price + ' <span>/ negotiable</span>';
 
-    // ── IMAGE: show real image or fallback placeholder ──
     const imgContainer = document.getElementById('modalImg');
     if (imagePath && imagePath.trim() !== '') {
-      imgContainer.innerHTML = '<img src="' + imagePath + '" alt="' + name + '" onerror="this.parentNode.innerHTML=\'<div class=\\\'placeholder-wrap\\\'><svg class=\\\'car-img-icon\\\' width=\\\'100\\\' height=\\\'62\\\' viewBox=\\\'0 0 800 400\\\' fill=\\\'white\\\'><path d=\\\'M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z\\\'/><circle cx=\\\'200\\\' cy=\\\'300\\\' r=\\\'44\\\'/><circle cx=\\\'620\\\' cy=\\\'300\\\' r=\\\'44\\\'/><circle cx=\\\'200\\\' cy=\\\'300\\\' r=\\\'28\\\' fill=\\\'#111\\\'/><circle cx=\\\'620\\\' cy=\\\'300\\\' r=\\\'28\\\' fill=\\\'#111\\\'/></svg><span class=\\\'car-img-label\\\'>No Image</span></div>\'"/>';
+      imgContainer.innerHTML = '<img src="' + imagePath + '" alt="' + name + '" onerror="this.parentNode.innerHTML=\'<div class=\\\'placeholder-wrap\\\'>' + getPlaceholderThumb().replace(/'/g, "&#39;") + '<span class=\\\'car-img-label\\\'>No Image</span></div>\'"/>';
     } else {
-      imgContainer.innerHTML = '<div class="placeholder-wrap"><svg class="car-img-icon" width="100" height="62" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg><span class="car-img-label">No Image</span></div>';
+      imgContainer.innerHTML = '<div class="placeholder-wrap">' + getPlaceholderThumb() + '<span class="car-img-label">No Image</span></div>';
     }
 
     const specLabels = ['Engine','Power','Drive','Year/KM'];
@@ -840,18 +1364,93 @@ ob_end_flush();
         <div class="modal-spec-key">${specLabels[i]}</div>
       </div>`).join('');
 
+    updateSaveButtonState(isFavorite);
     document.getElementById('modalOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
 
+  async function toggleFavorite(event) {
+    if (event) event.stopPropagation();
+    if (!currentModalCarId) return;
+
+    const formData = new URLSearchParams();
+    formData.append('action', 'toggle_favorite');
+    formData.append('car_id', currentModalCarId);
+
+    const btn = document.getElementById('saveFavoriteBtn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    try {
+      const response = await fetch(window.location.href, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: formData.toString()
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'Unable to update favorite.');
+
+      updateSaveButtonState(data.saved);
+      markCarCardsFavorite(currentModalCarId, data.saved);
+
+      const car = getCurrentModalCarData();
+      if (data.saved) {
+        addFavoriteToSidebar(car);
+      } else {
+        removeFavoriteFromSidebar(currentModalCarId);
+      }
+
+      showToast(data.message || (data.saved ? 'Saved to favorites.' : 'Removed from favorites.'));
+    } catch (error) {
+      btn.textContent = originalText;
+      showToast(error.message || 'Something went wrong.');
+    } finally {
+      btn.disabled = false;
+      if (btn.textContent === 'Saving...') updateSaveButtonState(currentModalFavorite);
+    }
+  }
+
   function closeModal() {
     document.getElementById('modalOverlay').classList.remove('open');
-    document.body.style.overflow = '';
+    document.body.style.overflow = document.getElementById('favoritesSidebar').classList.contains('open') ? 'hidden' : '';
   }
   function closeModalOutside(e) {
     if (e.target === document.getElementById('modalOverlay')) closeModal();
   }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  function toggleFavoritesSidebar() {
+    const sidebar = document.getElementById('favoritesSidebar');
+    if (sidebar.classList.contains('open')) {
+      closeFavoritesSidebar();
+    } else {
+      openFavoritesSidebar();
+    }
+  }
+
+  function openFavoritesSidebar() {
+    document.getElementById('favoritesSidebar').classList.add('open');
+    document.getElementById('favoritesSidebarOverlay').classList.add('open');
+    document.getElementById('favoritesToggle').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeFavoritesSidebar() {
+    document.getElementById('favoritesSidebar').classList.remove('open');
+    document.getElementById('favoritesSidebarOverlay').classList.remove('open');
+    document.getElementById('favoritesToggle').classList.remove('active');
+    if (!document.getElementById('modalOverlay').classList.contains('open')) {
+      document.body.style.overflow = '';
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal();
+      closeFavoritesSidebar();
+    }
+  });
 
   /* ── SEARCH / FILTER ── */
   function applyFilters() {
@@ -879,7 +1478,6 @@ ob_end_flush();
       if (show) visible++;
     });
 
-    // show/hide no results state
     const noRes = document.getElementById('noResultsState');
     const countEl = document.getElementById('sfResultsCount');
     const countNum = document.getElementById('sfCount');
@@ -903,7 +1501,6 @@ ob_end_flush();
     applyFilters();
   }
 
-  /* ── NAV ACTIVE STATE ── */
   const sections = document.querySelectorAll('section[id], div[id]');
   window.addEventListener('scroll', () => {
     let current = '';
@@ -913,6 +1510,9 @@ ob_end_flush();
       if (a.getAttribute('href') === '#' + current) a.classList.add('active');
     });
   });
+
+  ensureFavoritesEmptyState();
+  updateFavoriteCountDisplay();
 </script>
 </body>
 </html>

@@ -529,7 +529,7 @@ ob_end_flush();
     .car-badge { position: absolute; top: 14px; left: 14px; z-index: 3; padding: 4px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; border-radius: 3px; }
     .badge-new { background: var(--red); color: #fff; }
     .badge-hot { background: #e8891a; color: #fff; }
-    .badge-sale { background: #2a9d5c; color: #fff; }
+    .badge-Used { background: #2a9d5c; color: #fff; }
     .car-img { width: 100%; aspect-ratio: 16/10; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
     .car-img img { width: 100%; height: 100%; object-fit: cover; }
     .car-img::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.4) 100%); }
@@ -856,7 +856,7 @@ ob_end_flush();
         $bc = ''; $bl = '';
         if ($car['badge']==='new')  { $bc='badge-new';  $bl='NEW';  }
         if ($car['badge']==='hot')  { $bc='badge-hot';  $bl='HOT';  }
-        if ($car['badge']==='sale') { $bc='badge-sale'; $bl='DEAL'; }
+        if ($car['badge']==='Used') { $bc='badge-Used'; $bl='Used'; }
         $en = addslashes(htmlspecialchars($car['car_name']));
         $eb = addslashes(htmlspecialchars($car['brand']));
         $ed = addslashes(htmlspecialchars($car['description']));
@@ -948,7 +948,7 @@ ob_end_flush();
 
     <?php
     $f  = $featured_cars[0];
-    $bc = $f['badge']==='new' ? 'badge-new' : ($f['badge']==='hot' ? 'badge-hot' : ($f['badge']==='sale' ? 'badge-sale' : ''));
+    $bc = $f['badge']==='new' ? 'badge-new' : ($f['badge']==='hot' ? 'badge-hot' : ($f['badge']==='Used' ? 'badge-Used' : ''));
     $fi = addslashes(htmlspecialchars($f['image_path'] ?: ''));
     ?>
     <div class="featured-main car-card" onclick="openModal(
@@ -994,7 +994,7 @@ ob_end_flush();
     <?php for ($i = 1; $i <= 2; $i++):
       if (!isset($featured_cars[$i])) continue;
       $s  = $featured_cars[$i];
-      $sbc = $s['badge']==='new' ? 'badge-new' : ($s['badge']==='hot' ? 'badge-hot' : ($s['badge']==='sale' ? 'badge-sale' : ''));
+      $sbc = $s['badge']==='new' ? 'badge-new' : ($s['badge']==='hot' ? 'badge-hot' : ($s['badge']==='Used' ? 'badge-Used' : ''));
       $si = addslashes(htmlspecialchars($s['image_path'] ?: ''));
     ?>
     <div class="featured-side car-card" onclick="openModal(

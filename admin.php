@@ -304,7 +304,7 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
     .badge { display: inline-block; padding: 3px 9px; font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 10px; }
     .badge-hot  { background: rgba(232,137,26,0.15); color: var(--orange); border: 1px solid rgba(232,137,26,0.3); }
     .badge-new  { background: rgba(232,52,26,0.12);  color: var(--red);    border: 1px solid rgba(232,52,26,0.25); }
-    .badge-sale { background: rgba(42,157,92,0.12);  color: var(--green);  border: 1px solid rgba(42,157,92,0.25); }
+    .badge-Used { background: rgba(42,157,92,0.12);  color: var(--green);  border: 1px solid rgba(42,157,92,0.25); }
     .badge-none { color: var(--muted); font-size: 11px; }
 
     .cat-tag { display: inline-block; padding: 3px 9px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
@@ -478,7 +478,7 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
             <div class="field"><label>Seats</label><div class="input-wrap"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><input type="number" name="seats" min="1" max="60" placeholder="5"/></div></div>
           </div>
           <div class="form-grid-2">
-            <div class="field"><label>Badge / Tag</label><div class="input-wrap"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><select name="badge"><option value="">No Badge</option><option value="new">NEW</option><option value="hot">HOT</option><option value="sale">DEAL</option></select></div></div>
+            <div class="field"><label>Badge / Tag</label><div class="input-wrap"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><select name="badge"><option value="">No Badge</option><option value="new">NEW</option><option value="hot">HOT</option><option value="Used">Used</option></select></div></div>
             <div class="field"><label>Location</label><div class="input-wrap"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><input type="text" name="location" placeholder="e.g. Beirut, Lebanon"/></div></div>
           </div>
           <div class="form-full field"><label>Description</label><textarea name="description" placeholder="Write a compelling description of the vehicle — condition, history, features, seller notes..."></textarea></div>

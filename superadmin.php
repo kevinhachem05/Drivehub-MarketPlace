@@ -100,8 +100,6 @@ ob_end_flush();
     .nav-title span { color: var(--red); }
     .nav-badge { padding: 3px 10px; background: rgba(232,52,26,0.15); border: 1px solid rgba(232,52,26,0.3); border-radius: 3px; font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--red); }
     .nav-right { display: flex; align-items: center; gap: 12px; }
-    .btn-outline { padding: 9px 20px; background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: border-color 0.2s, background 0.2s; text-decoration: none; }
-    .btn-outline:hover { border-color: var(--border-hover); background: #1c1c1c; }
     .nav-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 6px; transition: background 0.2s; text-decoration: none; }
     .nav-profile:hover { background: rgba(255,255,255,0.06); }
     .nav-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #fff; flex-shrink: 0; }
@@ -184,6 +182,27 @@ ob_end_flush();
     .modal-confirm { flex: 1; padding: 12px; background: var(--red); border: none; border-radius: 5px; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; }
     .modal-confirm:hover { background: var(--red-dark); }
 
+     .nav-logout-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid rgba(232,52,26,0.25);
+      border-radius: 6px;
+      color: #e8341a;      /* f87171 */
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-logout-btn:hover {
+      background: rgba(232,52,26,0.1);
+      border-color: var(--red);
+      color: var(--white);
+    }
+
+
+
     @media (max-width: 768px) {
       nav { padding: 0 20px; }
       .main { padding: 88px 20px 40px; }
@@ -206,8 +225,14 @@ ob_end_flush();
     <span class="nav-badge">User Management</span>
   </div>
   <div class="nav-right">
-    <a href="logout.php" class="btn-outline">Log Out</a>
-    <a href="#" class="nav-profile">
+ <a href="logout.php" class="nav-logout-btn">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Logout
+    </a>    <a href="#" class="nav-profile">
       <div class="nav-avatar"><?php echo strtoupper(mb_substr($_SESSION['first_name'], 0, 1)); ?></div>
       <span class="nav-profile-name"><?php echo htmlspecialchars($_SESSION['first_name']); ?></span>
     </a>

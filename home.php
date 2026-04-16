@@ -149,6 +149,8 @@ ob_end_flush();
     .nav-ai-dot { width: 5px; height: 5px; background: var(--red); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
     .nav-cta { display: flex; align-items: center; gap: 12px; }
+     .nav-back { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
+    .nav-back:hover { color: var(--red); }
     .welcome { font-size: 13px; color: var(--muted); }
 
     /* ── LOGOUT BUTTON ── */
@@ -158,7 +160,7 @@ ob_end_flush();
       background: transparent;
       border: 1px solid rgba(232,52,26,0.25);
       border-radius: 6px;
-      color: #f87171;
+      color: #e8341a;
       font-family: 'DM Sans', sans-serif;
       font-size: 12px; font-weight: 500;
       letter-spacing: 0.08em; text-transform: uppercase;
@@ -194,7 +196,7 @@ ob_end_flush();
     .favorites-toggle.active {
       border-color: rgba(232,52,26,0.35);
       background: rgba(232,52,26,0.12);
-      color: #fff;
+      color: #fff;    /* fff  */ 
     }
     .favorites-count {
       position: absolute;
@@ -684,6 +686,33 @@ ob_end_flush();
     .modal-btn-sec { padding: 13px 20px; background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
     .modal-btn-sec:hover { border-color: var(--border-hover); background: #1c1c1c; }
 
+    /* ── SOLD OVERLAY ── */
+    .car-card.is-sold { pointer-events: none; cursor: default; }
+    .car-card.is-sold .car-img { filter: grayscale(0.7); }
+    .car-card.is-sold .car-name,
+    .car-card.is-sold .car-price { opacity: 0.45; }
+    .car-card.is-sold .car-btn { background: #2a2a2a; color: #555; pointer-events: none; }
+    .sold-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.48);
+      z-index: 5;
+      pointer-events: none;
+    }
+    .sold-stamp {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.25em;
+      color: #fff;
+      border: 3px solid #fff;
+      padding: 6px 20px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.35);
+      transform: rotate(-12deg);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      opacity: 0.92;
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 1100px) {
       .featured-grid { grid-template-columns: 1fr 1fr; }
@@ -857,6 +886,7 @@ ob_end_flush();
         if ($car['badge']==='new')  { $bc='badge-new';  $bl='NEW';  }
         if ($car['badge']==='hot')  { $bc='badge-hot';  $bl='HOT';  }
         if ($car['badge']==='Used') { $bc='badge-Used'; $bl='Used'; }
+        $isSold = (!empty($car['sold']) && $car['sold'] == 1);
         $en = addslashes(htmlspecialchars($car['car_name']));
         $eb = addslashes(htmlspecialchars($car['brand']));
         $ed = addslashes(htmlspecialchars($car['description']));
@@ -867,12 +897,13 @@ ob_end_flush();
         $ev = addslashes(htmlspecialchars($car['drive']  ?: '–'));
         $ei = addslashes(htmlspecialchars($car['image_path'] ?: ''));
       ?>
-      <div class="car-card"
+      <div class="car-card<?php echo $isSold ? ' is-sold' : ''; ?>"
            data-name="<?php echo strtolower(htmlspecialchars($car['car_name'] . ' ' . $car['brand'])); ?>"
            data-category="<?php echo strtolower(htmlspecialchars($car['category'] ?: '')); ?>"
            data-year="<?php echo $car['year']; ?>"
            data-brand="<?php echo strtolower(htmlspecialchars($car['brand'])); ?>"
            data-car-id="<?php echo (int)$car['id']; ?>"
+           <?php if (!$isSold): ?>
            onclick="openModal(
              <?php echo (int)$car['id']; ?>,
              '<?php echo $en;?>',
@@ -887,14 +918,18 @@ ob_end_flush();
              '<?php echo $bc;?>',
              '<?php echo $ei;?>',
              <?php echo in_array((int)$car['id'], $favorite_ids, true) ? 'true' : 'false'; ?>
-           )">
+           )"
+           <?php endif; ?>>
         <?php if ($bl): ?><span class="car-badge <?php echo $bc;?>"><?php echo $bl;?></span><?php endif; ?>
-        <div class="car-img">
+        <div class="car-img" style="position:relative;">
           <?php if ($car['image_path'] && file_exists($car['image_path'])): ?>
             <img src="<?php echo htmlspecialchars($car['image_path']);?>" alt="<?php echo htmlspecialchars($car['car_name']); ?>"/>
           <?php else: ?>
             <svg class="car-img-icon" width="80" height="50" viewBox="0 0 800 400" fill="white"><path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"/><circle cx="200" cy="300" r="44"/><circle cx="620" cy="300" r="44"/><circle cx="200" cy="300" r="28" fill="#111"/><circle cx="620" cy="300" r="28" fill="#111"/></svg>
             <span class="car-img-label">No Image</span>
+          <?php endif; ?>
+          <?php if ($isSold): ?>
+          <div class="sold-overlay"><div class="sold-stamp">SOLD</div></div>
           <?php endif; ?>
         </div>
         <div class="car-body">

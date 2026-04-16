@@ -71,6 +71,45 @@ if (isset($_GET['msg'])) {
     if ($_GET['msg'] === 'featured')    $success_msg = 'Car added to Featured This Week.';
     if ($_GET['msg'] === 'unfeatured')  $success_msg = 'Car removed from Featured This Week.';
     if ($_GET['msg'] === 'maxfeatured') $error_msg   = 'You already have 3 featured cars. Remove one before adding another.';
+    if ($_GET['msg'] === 'sold')        $success_msg = 'Car marked as sold.';
+    if ($_GET['msg'] === 'unsold')      $success_msg = 'Car marked as available again.';
+}
+
+/* ── TOGGLE SOLD ── */
+if (isset($_GET['toggle_sold']) && is_numeric($_GET['toggle_sold'])) {
+    $sid = (int)$_GET['toggle_sold'];
+    $conn->query("ALTER TABLE cars ADD COLUMN IF NOT EXISTS sold TINYINT(1) DEFAULT 0");
+    $schk = $conn->prepare("SELECT sold FROM cars WHERE id = ?");
+    $schk->bind_param("i", $sid);
+    $schk->execute();
+    $srow = $schk->get_result()->fetch_assoc();
+    $schk->close();
+    $new_sold = ($srow && $srow['sold'] == 1) ? 0 : 1;
+    $supd = $conn->prepare("UPDATE cars SET sold = ? WHERE id = ?");
+    $supd->bind_param("ii", $new_sold, $sid);
+    $supd->execute();
+    $supd->close();
+    header("Location: admin.php?msg=" . ($new_sold ? 'sold' : 'unsold'));
+    exit();
+}
+if (isset($_GET['msg'])) {
+    if ($_GET['msg'] === 'sold')   $success_msg = 'Car marked as sold.';
+    if ($_GET['msg'] === 'unsold') $success_msg = 'Car marked as available again.';
+}
+
+/* ── EDIT PRICE ── */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_price') {
+    $ep_id    = (int)$_POST['car_id'];
+    $ep_price = trim($_POST['new_price']);
+    if ($ep_id > 0 && $ep_price !== '') {
+        $epstmt = $conn->prepare("UPDATE cars SET price = ? WHERE id = ?");
+        $epstmt->bind_param("si", $ep_price, $ep_id);
+        $epstmt->execute();
+        $epstmt->close();
+        $success_msg = 'Price updated successfully.';
+    } else {
+        $error_msg = 'Invalid price or car ID.';
+    }
 }
 
 /* ── ADD CAR ── */
@@ -145,8 +184,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-/* ── ENSURE featured COLUMN EXISTS ── */
+/* ── ENSURE featured & sold COLUMNS EXIST ── */
 $conn->query("ALTER TABLE cars ADD COLUMN IF NOT EXISTS featured TINYINT(1) DEFAULT 0");
+$conn->query("ALTER TABLE cars ADD COLUMN IF NOT EXISTS sold TINYINT(1) DEFAULT 0");
 
 /* ── FETCH ALL CARS ── */
 $cars_result = $conn->query("SELECT * FROM cars ORDER BY created_at DESC");
@@ -332,8 +372,16 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
 
     .del-btn { padding: 7px 14px; background: transparent; border: 1px solid rgba(232,52,26,0.25); border-radius: 5px; color: #f87171; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
     .del-btn:hover { background: rgba(232,52,26,0.12); border-color: var(--red); color: var(--white); }
+    .edit-price-btn { padding: 7px 14px; background: transparent; border: 1px solid rgba(232,137,26,0.3); border-radius: 5px; color: #fbbf24; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+    .edit-price-btn:hover { background: rgba(232,137,26,0.12); border-color: var(--orange); color: var(--white); }
+    .sold-btn { padding: 7px 14px; background: transparent; border: 1px solid rgba(42,157,92,0.3); border-radius: 5px; color: #4ade80; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; text-decoration: none; display: inline-block; }
+    .sold-btn:hover { background: rgba(42,157,92,0.12); border-color: var(--green); color: var(--white); }
+    .unsold-btn { padding: 7px 14px; background: rgba(42,157,92,0.1); border: 1px solid rgba(42,157,92,0.4); border-radius: 5px; color: #4ade80; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; text-decoration: none; display: inline-block; }
+    .unsold-btn:hover { background: rgba(42,157,92,0.2); color: var(--white); }
+    tr.is-sold td { opacity: 0.55; }
+    tr.is-sold .car-name-cell { text-decoration: line-through; color: var(--muted); }
 
-    .actions-cell { display: flex; gap: 6px; align-items: center; }
+    .actions-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
     .empty-state { padding: 80px 40px; text-align: center; }
     .empty-icon { color: #222; margin: 0 auto 16px; }
@@ -548,7 +596,7 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
         </thead>
         <tbody>
           <?php foreach ($all_cars as $car): ?>
-          <tr class="<?php echo $car['featured'] ? 'is-featured' : ''; ?>">
+          <tr class="<?php echo $car['featured'] ? 'is-featured' : ''; ?> <?php echo (!empty($car['sold']) && $car['sold'] == 1) ? 'is-sold' : ''; ?>">
             <td>
               <?php if ($car['image_path'] && file_exists($car['image_path'])): ?>
                 <div class="td-img"><img src="<?php echo htmlspecialchars($car['image_path']); ?>" alt=""/></div>
@@ -558,7 +606,11 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
             </td>
             <td>
               <div class="car-name-cell"><?php echo htmlspecialchars($car['car_name']); ?></div>
-              <div class="car-brand-cell"><?php echo htmlspecialchars($car['brand']); ?></div>
+              <div class="car-brand-cell"><?php echo htmlspecialchars($car['brand']); ?>
+                <?php if (!empty($car['sold']) && $car['sold'] == 1): ?>
+                  &nbsp;<span style="display:inline-block;padding:1px 7px;background:rgba(42,157,92,0.15);border:1px solid rgba(42,157,92,0.3);border-radius:4px;font-size:9px;letter-spacing:0.12em;color:#4ade80;text-transform:uppercase;">SOLD</span>
+                <?php endif; ?>
+              </div>
             </td>
             <td><span class="cat-tag"><?php echo htmlspecialchars($car['category']); ?></span></td>
             <td><?php echo htmlspecialchars($car['year']); ?></td>
@@ -582,6 +634,12 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
             </td>
             <td>
               <div class="actions-cell">
+                <button class="edit-price-btn" onclick="openEditPriceModal(<?php echo $car['id']; ?>, '<?php echo addslashes(htmlspecialchars($car['price'])); ?>', '<?php echo addslashes($car['car_name']); ?>')">Edit Price</button>
+                <?php if (!empty($car['sold']) && $car['sold'] == 1): ?>
+                  <button class="unsold-btn" onclick="openSoldModal(<?php echo $car['id']; ?>, '<?php echo addslashes($car['car_name']); ?>', true)">✓ Sold</button>
+                <?php else: ?>
+                  <button class="sold-btn" onclick="openSoldModal(<?php echo $car['id']; ?>, '<?php echo addslashes($car['car_name']); ?>', false)">Mark Sold</button>
+                <?php endif; ?>
                 <button class="del-btn" onclick="confirmDelete(<?php echo $car['id']; ?>, '<?php echo addslashes($car['car_name']); ?>')">Remove</button>
               </div>
             </td>
@@ -592,6 +650,44 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
       <?php endif; ?>
     </div>
 
+  </div>
+</div>
+
+<!-- SOLD CONFIRMATION MODAL -->
+<div id="soldModal" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:40px;max-width:420px;width:90%;position:relative;text-align:center;">
+    <div id="soldModalIcon" style="width:60px;height:60px;border-radius:12px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;"></div>
+    <div id="soldModalTitle" style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.06em;color:var(--white);margin-bottom:8px;"></div>
+    <div id="soldModalMsg" style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:28px;"></div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button onclick="document.getElementById('soldModal').style.display='none'" style="padding:12px 24px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='#1e1e1e'" onmouseout="this.style.background='transparent'">Cancel</button>
+      <a id="soldConfirmLink" href="#" style="padding:12px 28px;background:var(--green);border:none;border-radius:6px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;cursor:pointer;text-decoration:none;display:inline-block;text-align:center;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">CONFIRM</a>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PRICE MODAL -->
+<div id="editPriceModal" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:40px;max-width:420px;width:90%;position:relative;">
+    <div style="width:52px;height:52px;background:rgba(232,137,26,0.1);border:1px solid rgba(232,137,26,0.2);border-radius:10px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;color:var(--orange);">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+    </div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.06em;color:var(--white);text-align:center;margin-bottom:4px">Edit Price</div>
+    <div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px" id="editPriceCarName">—</div>
+    <form method="POST">
+      <input type="hidden" name="action" value="edit_price"/>
+      <input type="hidden" name="car_id" id="editPriceCarId" value=""/>
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">New Price</label>
+        <input type="text" name="new_price" id="editPriceInput" placeholder="e.g. $45,000" required
+          style="width:100%;padding:12px 14px;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"/>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button type="button" onclick="document.getElementById('editPriceModal').style.display='none'" style="padding:12px 24px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">Cancel</button>
+        <button type="submit" style="padding:12px 28px;background:var(--orange);border:none;border-radius:6px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;cursor:pointer;">SAVE PRICE</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -628,6 +724,42 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
     zone.addEventListener('dragover', () => zone.classList.add('drag-over'));
     zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
     zone.addEventListener('drop', () => zone.classList.remove('drag-over'));
+  }
+
+  function openSoldModal(id, name, isSold) {
+    const icon = document.getElementById('soldModalIcon');
+    const title = document.getElementById('soldModalTitle');
+    const msg = document.getElementById('soldModalMsg');
+    const link = document.getElementById('soldConfirmLink');
+
+    if (isSold) {
+      icon.style.background = 'rgba(102,102,102,0.12)';
+      icon.style.border = '1px solid rgba(102,102,102,0.25)';
+      icon.style.color = '#aaa';
+      icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M9 12l2 2 4-4"/></svg>';
+      title.textContent = 'Mark as Available?';
+      msg.textContent = '"' + name + '" will be listed as available again for buyers.';
+      link.style.background = '#555';
+    } else {
+      icon.style.background = 'rgba(42,157,92,0.12)';
+      icon.style.border = '1px solid rgba(42,157,92,0.25)';
+      icon.style.color = '#4ade80';
+      icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+      title.textContent = 'Mark as Sold?';
+      msg.textContent = '"' + name + '" will appear as sold on the site. It stays visible but marked as unavailable.';
+      link.style.background = 'var(--green)';
+    }
+
+    link.href = 'admin.php?toggle_sold=' + id;
+    document.getElementById('soldModal').style.display = 'flex';
+  }
+
+  function openEditPriceModal(id, currentPrice, carName) {
+    document.getElementById('editPriceCarId').value  = id;
+    document.getElementById('editPriceInput').value  = currentPrice;
+    document.getElementById('editPriceCarName').textContent = carName;
+    document.getElementById('editPriceModal').style.display = 'flex';
+    setTimeout(() => document.getElementById('editPriceInput').focus(), 100);
   }
 
   function confirmDelete(id, name) {

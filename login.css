@@ -11,6 +11,9 @@
   --red: #e8341a;
   --red-dark: #c0290e;
   --input-bg: #1c1c1c;
+  --error: #e8341a;
+  --error-bg: rgba(232, 52, 26, 0.08);
+  --error-border: rgba(232, 52, 26, 0.5);
 }
 
 html, body {
@@ -114,7 +117,6 @@ html, body {
   display: flex; gap: 40px;
   margin-top: 40px;
 }
-
 
 .stat-num {
   font-family: 'Bebas Neue', sans-serif;
@@ -275,12 +277,13 @@ html, body {
 
 .input-wrap { position: relative; }
 
-.input-wrap svg {
+.input-wrap svg:first-child {
   position: absolute;
   left: 14px;
   top: 50%; transform: translateY(-50%);
   color: var(--muted);
   pointer-events: none;
+  transition: color 0.2s;
 }
 
 .field input {
@@ -293,7 +296,7 @@ html, body {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .field input::placeholder { color: #444; }
@@ -303,6 +306,56 @@ html, body {
   box-shadow: 0 0 0 3px rgba(232,52,26,0.12);
 }
 
+/* ─── Error states ─── */
+.input-wrap.has-error svg:first-child {
+  color: var(--error);
+}
+
+.field input.input-error {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+  box-shadow: 0 0 0 3px rgba(232, 52, 26, 0.08);
+}
+
+.field input.input-error:focus {
+  border-color: var(--error);
+  box-shadow: 0 0 0 3px rgba(232, 52, 26, 0.18);
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  margin-top: 4px;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 5px;
+  color: var(--error);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  animation: errorSlide 0.22s cubic-bezier(.22,1,.36,1) both;
+}
+
+.field-error svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+@keyframes errorSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Eye button ─── */
 .eye-btn {
   position: absolute;
   right: 14px; top: 50%; transform: translateY(-50%);

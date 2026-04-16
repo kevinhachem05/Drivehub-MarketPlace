@@ -14,7 +14,19 @@ $email_error    = '';
 $password_error = '';
 $email_value    = '';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+// ── Signup error variables ──
+$su_first_name_error    = '';
+$su_last_name_error     = '';
+$su_email_error         = '';
+$su_password_error      = '';
+$su_confirm_error       = '';
+$su_first_name_value    = '';
+$su_last_name_value     = '';
+$su_email_value         = '';
+$show_signup            = false;
+
+// ── LOGIN ──
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['form_type']) && $_POST['form_type'] === 'login') {
     $email    = trim($_POST['email']);
     $password = $_POST['password'];
     $email_value = htmlspecialchars($email);
@@ -68,6 +80,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         } else {
             $email_error = 'No account found with that email address.';
+        }
+
+        $stmt->close();
+        $conn->close();
+    }
+}
+
+// ── SIGNUP ──
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['form_type']) && $_POST['form_type'] === 'signup') {
+    $show_signup = true;
+
+    $first_name      = trim($_POST['first_name']);
+    $last_name       = trim($_POST['last_name']);
+    $email           = trim($_POST['email']);
+    $password        = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+
+    // Keep values to repopulate fields
+    $su_first_name_value = htmlspecialchars($first_name);
+    $su_last_name_value  = htmlspecialchars($last_name);
+    $su_email_value      = htmlspecialchars($email);
+
+    // Validate
+    if (empty($first_name)) {
+        $su_first_name_error = 'Please enter your first name.';
+    }
+    if (empty($last_name)) {
+        $su_last_name_error = 'Please enter your last name.';
+    }
+    if (empty($email)) {
+        $su_email_error = 'Please enter your email address.';
+    }
+    if (empty($password)) {
+        $su_password_error = 'Please enter a password.';
+    } elseif (strlen($password) < 8) {
+        $su_password_error = 'Password must be at least 8 characters.';
+    }
+    if (empty($confirm_password)) {
+        $su_confirm_error = 'Please confirm your password.';
+    } elseif ($password !== $confirm_password) {
+        $su_confirm_error = 'Passwords do not match. Please try again.';
+    }
+
+    // Only hit DB if no validation errors
+    if (empty($su_first_name_error) && empty($su_last_name_error) && empty($su_email_error) && empty($su_password_error) && empty($su_confirm_error)) {
+        $check_sql = "SELECT id FROM users WHERE email = ?";
+        $stmt = $conn->prepare($check_sql);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $stmt->store_result();
+
+        if ($stmt->num_rows > 0) {
+            $su_email_error = 'An account with this email already exists.';
+        } else {
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $sql = "INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssss", $first_name, $last_name, $email, $hashed_password);
+
+            if ($stmt->execute()) {
+                ob_end_clean();
+                header("Location: login.php");
+                exit();
+            } else {
+                $su_email_error = 'Something went wrong. Please try again.';
+            }
         }
 
         $stmt->close();
@@ -140,14 +218,12 @@ html, body {
   to   { transform: scale(1.0); }
 }
 
-/* diagonal vignette from right */
 .hero::after {
   content: '';
   position: absolute; inset: 0;
   background: linear-gradient(to right, transparent 50%, var(--black) 100%);
 }
 
-/* speed lines texture */
 .hero-lines {
   position: absolute; inset: 0;
   background-image: repeating-linear-gradient(
@@ -237,7 +313,6 @@ html, body {
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* subtle corner accent */
 .panel::before {
   content: '';
   position: absolute;
@@ -433,14 +508,8 @@ html, body {
 }
 
 @keyframes errorSlide {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ─── Eye button ─── */
@@ -573,7 +642,7 @@ html, body {
   </div>
 
   <!-- ── RIGHT PANEL (LOGIN) ── -->
-  <div class="panel">
+  <div class="panel" id="loginPanel" <?= $show_signup ? 'style="display:none;"' : '' ?>>
 
     <div class="logo">
       <div class="logo-mark">
@@ -610,6 +679,7 @@ html, body {
     </div>
 
     <form class="form" action="login.php" method="POST">
+      <input type="hidden" name="form_type" value="login"/>
       <div class="field">
         <label>Email address</label>
         <div class="input-wrap <?= !empty($email_error) ? 'has-error' : '' ?>">
@@ -675,7 +745,7 @@ html, body {
   </div><!-- /.panel login -->
 
   <!-- ── SIGNUP PANEL ── -->
-  <div class="panel signup-panel" id="signupPanel" style="display:none;">
+  <div class="panel signup-panel" id="signupPanel" <?= $show_signup ? '' : 'style="display:none;"' ?>>
 
     <div class="logo">
       <div class="logo-mark">
@@ -687,47 +757,87 @@ html, body {
     <h2 class="panel-title">CREATE<br>ACCOUNT</h2>
     <p class="panel-sub">Already have one? <a href="#" onclick="showLogin(event)">Sign in →</a></p>
 
-    <form class="form" action="signup.php" method="POST">
+    <form class="form" action="login.php" method="POST">
+      <input type="hidden" name="form_type" value="signup"/>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="field">
           <label>First Name</label>
-          <div class="input-wrap">
+          <div class="input-wrap <?= !empty($su_first_name_error) ? 'has-error' : '' ?>">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
             </svg>
-            <input type="text" name="first_name" placeholder="John" autocomplete="given-name" required/>
+            <input type="text" name="first_name" placeholder="John" autocomplete="given-name"
+              value="<?= $su_first_name_value ?>"
+              class="<?= !empty($su_first_name_error) ? 'input-error' : '' ?>"/>
           </div>
+          <?php if (!empty($su_first_name_error)): ?>
+            <div class="field-error">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <?= htmlspecialchars($su_first_name_error) ?>
+            </div>
+          <?php endif; ?>
         </div>
+
         <div class="field">
           <label>Last Name</label>
-          <div class="input-wrap">
+          <div class="input-wrap <?= !empty($su_last_name_error) ? 'has-error' : '' ?>">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
             </svg>
-            <input type="text" name="last_name" placeholder="Doe" autocomplete="family-name" required/>
+            <input type="text" name="last_name" placeholder="Doe" autocomplete="family-name"
+              value="<?= $su_last_name_value ?>"
+              class="<?= !empty($su_last_name_error) ? 'input-error' : '' ?>"/>
           </div>
+          <?php if (!empty($su_last_name_error)): ?>
+            <div class="field-error">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <?= htmlspecialchars($su_last_name_error) ?>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
 
       <div class="field">
         <label>Email address</label>
-        <div class="input-wrap">
+        <div class="input-wrap <?= !empty($su_email_error) ? 'has-error' : '' ?>">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="2" y="4" width="20" height="16" rx="2"/>
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
           </svg>
-          <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required/>
+          <input type="email" name="email" placeholder="you@example.com" autocomplete="email"
+            value="<?= $su_email_value ?>"
+            class="<?= !empty($su_email_error) ? 'input-error' : '' ?>"/>
         </div>
+        <?php if (!empty($su_email_error)): ?>
+          <div class="field-error">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <?= htmlspecialchars($su_email_error) ?>
+          </div>
+        <?php endif; ?>
       </div>
 
       <div class="field">
         <label>Password</label>
-        <div class="input-wrap">
+        <div class="input-wrap <?= !empty($su_password_error) ? 'has-error' : '' ?>">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="3" y="11" width="18" height="11" rx="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
-          <input type="password" name="password" id="pwInputSu" placeholder="Min. 8 characters" autocomplete="new-password" required/>
+          <input type="password" name="password" id="pwInputSu" placeholder="Min. 8 characters" autocomplete="new-password"
+            class="<?= !empty($su_password_error) ? 'input-error' : '' ?>"/>
           <button class="eye-btn" onclick="togglePwSu()" type="button" aria-label="Toggle password">
             <svg id="eyeIconSu" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
@@ -735,17 +845,38 @@ html, body {
             </svg>
           </button>
         </div>
+        <?php if (!empty($su_password_error)): ?>
+          <div class="field-error">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <?= htmlspecialchars($su_password_error) ?>
+          </div>
+        <?php endif; ?>
       </div>
 
       <div class="field">
         <label>Confirm Password</label>
-        <div class="input-wrap">
+        <div class="input-wrap <?= !empty($su_confirm_error) ? 'has-error' : '' ?>">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="3" y="11" width="18" height="11" rx="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
-          <input type="password" name="confirm_password" id="pwConfirm" placeholder="Repeat password" autocomplete="new-password" required/>
+          <input type="password" name="confirm_password" id="pwConfirm" placeholder="Repeat password" autocomplete="new-password"
+            class="<?= !empty($su_confirm_error) ? 'input-error' : '' ?>"/>
         </div>
+        <?php if (!empty($su_confirm_error)): ?>
+          <div class="field-error">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <?= htmlspecialchars($su_confirm_error) ?>
+          </div>
+        <?php endif; ?>
       </div>
 
       <button class="submit-btn" type="submit">CREATE ACCOUNT</button>
@@ -755,7 +886,8 @@ html, body {
       By signing up you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
     </p>
 
-  </div>
+  </div><!-- /.panel signup -->
+
 </div>
 
 <script src="login.js"></script>

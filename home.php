@@ -22,6 +22,19 @@ $conn->query("CREATE TABLE IF NOT EXISTS favorites (
     INDEX idx_car_id (car_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+$conn->query("CREATE TABLE IF NOT EXISTS messages (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT NOT NULL,
+    car_id      INT DEFAULT NULL,
+    car_name    VARCHAR(200) DEFAULT '',
+    sender      ENUM('user','admin') NOT NULL DEFAULT 'user',
+    body        TEXT NOT NULL,
+    is_read     TINYINT(1) DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_car_id  (car_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_favorite') {
     header('Content-Type: application/json');
 
@@ -97,6 +110,17 @@ if ($fav_stmt) {
 }
 $favorite_count = count($favorite_ids);
 
+/* ── Unread messages count for nav badge ── */
+$unread_count = 0;
+$unread_stmt = $conn->prepare("SELECT COUNT(*) FROM messages WHERE user_id = ? AND sender = 'admin' AND is_read = 0");
+if ($unread_stmt) {
+    $unread_stmt->bind_param("i", $user_id);
+    $unread_stmt->execute();
+    $unread_stmt->bind_result($unread_count);
+    $unread_stmt->fetch();
+    $unread_stmt->close();
+}
+
 ob_end_flush();
 ?>
 <!DOCTYPE html>
@@ -149,7 +173,7 @@ ob_end_flush();
     .nav-ai-dot { width: 5px; height: 5px; background: var(--red); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
     .nav-cta { display: flex; align-items: center; gap: 12px; }
-     .nav-back { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
+    .nav-back { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
     .nav-back:hover { color: var(--red); }
     .welcome { font-size: 13px; color: var(--muted); }
 
@@ -173,6 +197,35 @@ ob_end_flush();
       color: var(--white);
     }
 
+    /* ── MESSAGES NAV BUTTON ── */
+    .nav-messages-btn {
+      position: relative;
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .nav-messages-btn:hover {
+      border-color: rgba(232,52,26,0.35);
+      background: rgba(232,52,26,0.12);
+      color: #fff;
+    }
+    .nav-messages-btn .msg-badge {
+      position: absolute; top: -6px; right: -6px;
+      min-width: 18px; height: 18px;
+      border-radius: 999px;
+      background: var(--red); color: #fff;
+      font-size: 10px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0 5px;
+      border: 2px solid var(--black);
+    }
+
     .nav-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 6px; transition: background 0.2s; text-decoration: none; }
     .nav-profile:hover { background: rgba(255,255,255,0.06); }
     .nav-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: #fff; flex-shrink: 0; }
@@ -180,15 +233,12 @@ ob_end_flush();
 
     .favorites-toggle {
       position: relative;
-      width: 40px;
-      height: 40px;
+      width: 40px; height: 40px;
       border-radius: 10px;
       border: 1px solid var(--border);
       background: rgba(255,255,255,0.03);
       color: var(--text);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-flex; align-items: center; justify-content: center;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -196,212 +246,85 @@ ob_end_flush();
     .favorites-toggle.active {
       border-color: rgba(232,52,26,0.35);
       background: rgba(232,52,26,0.12);
-      color: #fff;    /* fff  */ 
+      color: #fff;
     }
     .favorites-count {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      min-width: 18px;
-      height: 18px;
+      position: absolute; top: -6px; right: -6px;
+      min-width: 18px; height: 18px;
       border-radius: 999px;
-      background: var(--red);
-      color: #fff;
-      font-size: 10px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      background: var(--red); color: #fff;
+      font-size: 10px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
       padding: 0 5px;
       border: 2px solid var(--black);
     }
 
     .favorites-sidebar-overlay {
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background: rgba(0,0,0,0.45);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s;
-      z-index: 190;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s; z-index: 190;
     }
-    .favorites-sidebar-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .favorites-sidebar-overlay.open { opacity: 1; pointer-events: auto; }
     .favorites-sidebar {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: min(420px, 92vw);
-      height: 100vh;
+      position: fixed; top: 0; right: 0;
+      width: min(420px, 92vw); height: 100vh;
       background: linear-gradient(180deg, #131313 0%, #0d0d0d 100%);
       border-left: 1px solid var(--border);
       box-shadow: -14px 0 40px rgba(0,0,0,0.35);
       z-index: 210;
       transform: translateX(100%);
       transition: transform 0.28s ease;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
     }
     .favorites-sidebar.open { transform: translateX(0); }
     .favorites-sidebar-header {
       padding: 24px 22px 18px;
       border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
     }
-    .favorites-sidebar-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
-      letter-spacing: 0.08em;
-      color: var(--white);
-      margin-bottom: 6px;
-    }
-    .favorites-sidebar-sub {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
+    .favorites-sidebar-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.08em; color: var(--white); margin-bottom: 6px; }
+    .favorites-sidebar-sub { font-size: 12px; color: var(--muted); line-height: 1.6; }
     .favorites-sidebar-close {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+      width: 36px; height: 36px;
+      border-radius: 8px; border: 1px solid var(--border);
       background: rgba(255,255,255,0.03);
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 18px;
+      color: var(--text); cursor: pointer;
+      transition: all 0.2s; font-size: 18px;
     }
-    .favorites-sidebar-close:hover {
-      border-color: rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.06);
-    }
-    .favorites-sidebar-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
+    .favorites-sidebar-close:hover { border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
+    .favorites-sidebar-body { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
     .favorite-item {
-      display: flex;
-      gap: 14px;
-      padding: 14px;
+      display: flex; gap: 14px; padding: 14px;
       background: rgba(255,255,255,0.03);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      transition: all 0.2s;
-      cursor: pointer;
+      border-radius: 14px; transition: all 0.2s; cursor: pointer;
     }
-    .favorite-item:hover {
-      border-color: rgba(232,52,26,0.3);
-      transform: translateY(-2px);
-      background: rgba(255,255,255,0.05);
-    }
-    .favorite-thumb {
-      width: 92px;
-      min-width: 92px;
-      height: 72px;
-      border-radius: 10px;
-      overflow: hidden;
-      background: #101010;
-      border: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .favorite-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .favorite-thumb svg {
-      width: 42px;
-      height: 28px;
-      opacity: 0.15;
-    }
-    .favorite-item-body {
-      flex: 1;
-      min-width: 0;
-    }
-    .favorite-item-brand {
-      font-size: 10px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--red);
-      margin-bottom: 4px;
-    }
-    .favorite-item-name {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      letter-spacing: 0.04em;
-      color: var(--white);
-      margin-bottom: 6px;
-      line-height: 1;
-    }
-    .favorite-item-meta {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
-      margin-bottom: 8px;
-    }
-    .favorite-item-price {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      color: var(--white);
-      letter-spacing: 0.04em;
-    }
-    .favorites-empty {
-      margin: auto 0;
-      text-align: center;
-      padding: 32px 18px;
-      border: 1px dashed rgba(255,255,255,0.08);
-      border-radius: 18px;
-      background: rgba(255,255,255,0.02);
-    }
-    .favorites-empty svg {
-      opacity: 0.18;
-      margin-bottom: 16px;
-    }
-    .favorites-empty-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 26px;
-      letter-spacing: 0.08em;
-      color: var(--white);
-      margin-bottom: 6px;
-    }
-    .favorites-empty-desc {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
+    .favorite-item:hover { border-color: rgba(232,52,26,0.3); transform: translateY(-2px); background: rgba(255,255,255,0.05); }
+    .favorite-thumb { width: 92px; min-width: 92px; height: 72px; border-radius: 10px; overflow: hidden; background: #101010; border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; }
+    .favorite-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .favorite-thumb svg { width: 42px; height: 28px; opacity: 0.15; }
+    .favorite-item-body { flex: 1; min-width: 0; }
+    .favorite-item-brand { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--red); margin-bottom: 4px; }
+    .favorite-item-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.04em; color: var(--white); margin-bottom: 6px; line-height: 1; }
+    .favorite-item-meta { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 8px; }
+    .favorite-item-price { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--white); letter-spacing: 0.04em; }
+    .favorites-empty { margin: auto 0; text-align: center; padding: 32px 18px; border: 1px dashed rgba(255,255,255,0.08); border-radius: 18px; background: rgba(255,255,255,0.02); }
+    .favorites-empty svg { opacity: 0.18; margin-bottom: 16px; }
+    .favorites-empty-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.08em; color: var(--white); margin-bottom: 6px; }
+    .favorites-empty-desc { font-size: 13px; color: var(--muted); line-height: 1.7; }
 
     .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 26px;
+      position: fixed; left: 50%; bottom: 26px;
       transform: translateX(-50%) translateY(18px);
-      background: #171717;
-      color: #fff;
+      background: #171717; color: #fff;
       border: 1px solid rgba(232,52,26,0.25);
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.28);
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.25s ease;
-      z-index: 260;
+      padding: 12px 16px; border-radius: 10px;
+      font-size: 13px; box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+      opacity: 0; pointer-events: none;
+      transition: all 0.25s ease; z-index: 260;
     }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* ── HERO ── */
     .hero { position: relative; height: 100vh; min-height: 600px; display: flex; align-items: flex-start; overflow: hidden; }
@@ -438,86 +361,18 @@ ob_end_flush();
     .view-all:hover { color: var(--red); border-color: var(--red); }
 
     /* ── SEARCH FILTER BAR ── */
-    .search-filter-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      flex: 1;
-      max-width: 780px;
-    }
-    .search-filter-bar .sf-input {
-      flex: 1;
-      min-width: 160px;
-      padding: 10px 14px;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      color: var(--white);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
+    .search-filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; max-width: 780px; }
+    .search-filter-bar .sf-input { flex: 1; min-width: 160px; padding: 10px 14px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 5px; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
     .search-filter-bar .sf-input::placeholder { color: #444; }
     .search-filter-bar .sf-input:focus { border-color: rgba(232,52,26,0.5); }
-    .search-filter-bar .sf-select {
-      padding: 10px 12px;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      outline: none;
-      cursor: pointer;
-      transition: border-color 0.2s;
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      padding-right: 28px;
-    }
+    .search-filter-bar .sf-select { padding: 10px 12px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; cursor: pointer; transition: border-color 0.2s; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
     .search-filter-bar .sf-select:focus { border-color: rgba(232,52,26,0.5); }
     .search-filter-bar .sf-select option { background: #1c1c1c; }
-    .sf-btn {
-      padding: 10px 20px;
-      background: var(--red);
-      border: none;
-      border-radius: 5px;
-      color: #fff;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 15px;
-      letter-spacing: 0.1em;
-      cursor: pointer;
-      transition: background 0.2s;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
+    .sf-btn { padding: 10px 20px; background: var(--red); border: none; border-radius: 5px; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
     .sf-btn:hover { background: var(--red-dark); }
-    .sf-reset {
-      padding: 10px 14px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      color: var(--muted);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
+    .sf-reset { padding: 10px 14px; background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .sf-reset:hover { border-color: var(--border-hover); color: var(--text); }
-    .sf-results-count {
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-      margin-top: 6px;
-      width: 100%;
-    }
+    .sf-results-count { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; margin-top: 6px; width: 100%; }
     .sf-results-count span { color: var(--red); font-weight: 500; }
 
     /* ── CATEGORIES ── */
@@ -581,26 +436,9 @@ ob_end_flush();
     .brand-name:hover { color: var(--red); }
 
     /* ── AI PREDICTOR SECTION ── */
-    #ai-predictor {
-      background: var(--black);
-      padding: 100px 80px;
-      position: relative;
-      overflow: hidden;
-      border-top: 1px solid var(--border);
-    }
-    #ai-predictor::before {
-      content: '';
-      position: absolute; top: 0; right: 0;
-      width: 55%; height: 100%;
-      background: radial-gradient(ellipse at 80% 50%, rgba(232,52,26,0.065) 0%, transparent 65%);
-      pointer-events: none;
-    }
-    #ai-predictor::after {
-      content: '';
-      position: absolute; inset: 0;
-      background-image: repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(255,255,255,0.008) 40px, rgba(255,255,255,0.008) 41px);
-      pointer-events: none;
-    }
+    #ai-predictor { background: var(--black); padding: 100px 80px; position: relative; overflow: hidden; border-top: 1px solid var(--border); }
+    #ai-predictor::before { content: ''; position: absolute; top: 0; right: 0; width: 55%; height: 100%; background: radial-gradient(ellipse at 80% 50%, rgba(232,52,26,0.065) 0%, transparent 65%); pointer-events: none; }
+    #ai-predictor::after { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(255,255,255,0.008) 40px, rgba(255,255,255,0.008) 41px); pointer-events: none; }
     .ai-inner { display: grid; grid-template-columns: 1fr 1.08fr; gap: 72px; align-items: start; }
     .ai-left { min-height: 100%; display: flex; flex-direction: column; }
     .ai-right { min-height: 100%; display: flex; flex-direction: column; gap: 2px; }
@@ -681,50 +519,27 @@ ob_end_flush();
     .modal-price { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--white); letter-spacing: 0.04em; }
     .modal-price span { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 300; color: var(--muted); }
     .modal-actions { display: flex; gap: 10px; }
-    .modal-btn-primary { padding: 13px 28px; background: var(--red); border: none; border-radius: 5px; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; }
-    .modal-btn-primary:hover { background: var(--red-dark); }
+    .modal-btn-primary {
+      padding: 13px 28px; background: var(--red); border: none; border-radius: 5px;
+      color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 0.1em;
+      cursor: pointer; transition: background 0.2s, transform 0.1s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .modal-btn-primary:hover { background: var(--red-dark); transform: scale(1.02); }
     .modal-btn-sec { padding: 13px 20px; background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
     .modal-btn-sec:hover { border-color: var(--border-hover); background: #1c1c1c; }
 
     /* ── SOLD OVERLAY ── */
     .car-card.is-sold { pointer-events: none; cursor: default; }
     .car-card.is-sold .car-img { filter: grayscale(0.7); }
-    .car-card.is-sold .car-name,
-    .car-card.is-sold .car-price { opacity: 0.45; }
+    .car-card.is-sold .car-name, .car-card.is-sold .car-price { opacity: 0.45; }
     .car-card.is-sold .car-btn { background: #2a2a2a; color: #555; pointer-events: none; }
-    .sold-overlay {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.48);
-      z-index: 5;
-      pointer-events: none;
-    }
-    .sold-stamp {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
-      letter-spacing: 0.25em;
-      color: #fff;
-      border: 3px solid #fff;
-      padding: 6px 20px;
-      border-radius: 4px;
-      background: rgba(0,0,0,0.35);
-      transform: rotate(-12deg);
-      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-      opacity: 0.92;
-    }
+    .sold-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.48); z-index: 5; pointer-events: none; }
+    .sold-stamp { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.25em; color: #fff; border: 3px solid #fff; padding: 6px 20px; border-radius: 4px; background: rgba(0,0,0,0.35); transform: rotate(-12deg); text-shadow: 0 2px 8px rgba(0,0,0,0.5); opacity: 0.92; }
 
     /* ── RESPONSIVE ── */
-    @media (max-width: 1100px) {
-      .featured-grid { grid-template-columns: 1fr 1fr; }
-      .why-grid { grid-template-columns: repeat(2,1fr); }
-      .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
-      .ai-inner { grid-template-columns: 1fr; gap: 48px; }
-    }
-    @media (max-width: 900px) {
-      .search-filter-bar { flex-direction: column; align-items: stretch; }
-      .search-filter-bar .sf-input,
-      .search-filter-bar .sf-select { width: 100%; }
-    }
+    @media (max-width: 1100px) { .featured-grid { grid-template-columns: 1fr 1fr; } .why-grid { grid-template-columns: repeat(2,1fr); } .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; } .ai-inner { grid-template-columns: 1fr; gap: 48px; } }
+    @media (max-width: 900px) { .search-filter-bar { flex-direction: column; align-items: stretch; } .search-filter-bar .sf-input, .search-filter-bar .sf-select { width: 100%; } }
     @media (max-width: 768px) {
       nav { padding: 0 24px; }
       .nav-links { display: none; }
@@ -773,6 +588,18 @@ ob_end_flush();
       Logout
     </a>
 
+    <!-- Messages Button -->
+    <a href="messages.php" class="nav-messages-btn" title="Messages" id="navMsgBtn">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <?php if ($unread_count > 0): ?>
+      <span class="msg-badge" id="navMsgBadge"><?php echo $unread_count; ?></span>
+      <?php else: ?>
+      <span class="msg-badge" id="navMsgBadge" style="display:none">0</span>
+      <?php endif; ?>
+    </a>
+
     <button type="button" class="favorites-toggle" id="favoritesToggle" onclick="toggleFavoritesSidebar()" aria-label="Open favorites">
       <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M12 21s-6.7-4.35-9.33-8.15C.7 9.98 2.08 5.5 6.24 4.46c2.2-.55 4.47.2 5.76 1.95 1.29-1.75 3.56-2.5 5.76-1.95 4.16 1.04 5.54 5.52 3.57 8.39C18.7 16.65 12 21 12 21z"/>
@@ -805,9 +632,7 @@ ob_end_flush();
     <p class="hero-desc">Browse thousands of verified vehicles across every category — from rugged 4x4s to sleek city cars, bikes, and more.</p>
     <div class="hero-actions">
       <button class="hero-btn" onclick="document.getElementById('categories').scrollIntoView({behavior:'smooth'})">BROWSE ALL CARS</button>
-     <button class="hero-btn-ghost" onclick="window.location.href='hiw.html'">
-  How It Works
-</button>
+      <button class="hero-btn-ghost" onclick="window.location.href='hiw.html'">How It Works</button>
     </div>
   </div>
   <div class="hero-stats">
@@ -833,7 +658,6 @@ ob_end_flush();
       <p class="section-eyebrow">Shop by Type</p>
       <h2 class="section-title">BROWSE CATEGORIES</h2>
     </div>
-    <!-- SEARCH & FILTER BAR -->
     <div class="search-filter-bar" id="searchFilterBar">
       <input class="sf-input" type="text" id="sfSearch" placeholder="Search make, model…" oninput="applyFilters()"/>
       <select class="sf-select" id="sfCategory" onchange="applyFilters()">
@@ -874,7 +698,6 @@ ob_end_flush();
     </div>
   </div>
 
-  <!-- Results count -->
   <div class="sf-results-count" id="sfResultsCount" style="margin-bottom:20px;display:none;">
     Showing <span id="sfCount">0</span> result(s)
   </div>
@@ -955,7 +778,6 @@ ob_end_flush();
         </div>
       </div>
       <?php endforeach; ?>
-      <!-- No results state -->
       <div class="empty-state" id="noResultsState">
         <svg class="empty-state-icon" width="64" height="64" fill="none" stroke="white" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <div class="empty-state-title">No Results Found</div>
@@ -980,7 +802,6 @@ ob_end_flush();
 
   <?php if (!empty($featured_cars)): ?>
   <div class="featured-grid">
-
     <?php
     $f  = $featured_cars[0];
     $bc = $f['badge']==='new' ? 'badge-new' : ($f['badge']==='hot' ? 'badge-hot' : ($f['badge']==='Used' ? 'badge-Used' : ''));
@@ -1065,7 +886,6 @@ ob_end_flush();
       </div>
     </div>
     <?php endfor; ?>
-
   </div>
   <?php else: ?>
   <div style="padding:60px 0;text-align:center;border:1px dashed rgba(255,255,255,0.08);color:#333;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;">
@@ -1158,6 +978,7 @@ ob_end_flush();
   </div>
 </footer>
 
+<!-- Favorites Sidebar Overlay -->
 <div class="favorites-sidebar-overlay" id="favoritesSidebarOverlay" onclick="closeFavoritesSidebar()"></div>
 <aside class="favorites-sidebar" id="favoritesSidebar">
   <div class="favorites-sidebar-header">
@@ -1229,9 +1050,7 @@ ob_end_flush();
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal" id="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-img" id="modalImg">
-      <!-- image or placeholder injected by JS -->
-    </div>
+    <div class="modal-img" id="modalImg"></div>
     <div class="modal-body">
       <div class="modal-brand" id="modalBrand">Brand</div>
       <div class="modal-name" id="modalName">Car Name</div>
@@ -1244,7 +1063,10 @@ ob_end_flush();
         </div>
         <div class="modal-actions">
           <button class="modal-btn-sec" id="saveFavoriteBtn" type="button" onclick="toggleFavorite(event)">Save ♡</button>
-          <button class="modal-btn-primary" type="button">Contact Seller</button>
+          <button class="modal-btn-primary" type="button" id="contactSellerBtn" onclick="contactSeller(event)">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Contact Seller
+          </button>
         </div>
       </div>
     </div>
@@ -1252,8 +1074,16 @@ ob_end_flush();
 </div>
 
 <script>
-  let currentModalCarId = null;
+
+  /* ============================================================
+   DROP-IN REPLACEMENT for the <script> block in home.php
+   bottom of home.php with this content.
+   ============================================================ */
+
+  let currentModalCarId    = null;
   let currentModalFavorite = false;
+  let currentModalCarName  = '';
+  let currentModalCarData  = {};   // ← stores ALL car fields
 
   function escapeHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, function (m) {
@@ -1278,8 +1108,8 @@ ob_end_flush();
     currentModalFavorite = !!isFavorite;
     btn.textContent = currentModalFavorite ? 'Saved ♥' : 'Save ♡';
     btn.style.borderColor = currentModalFavorite ? 'rgba(232,52,26,0.35)' : '';
-    btn.style.background = currentModalFavorite ? 'rgba(232,52,26,0.1)' : '';
-    btn.style.color = currentModalFavorite ? '#fff' : '';
+    btn.style.background  = currentModalFavorite ? 'rgba(232,52,26,0.1)' : '';
+    btn.style.color       = currentModalFavorite ? '#fff' : '';
   }
 
   function updateFavoriteCountDisplay() {
@@ -1288,27 +1118,20 @@ ob_end_flush();
   }
 
   function ensureFavoritesEmptyState() {
-    const body = document.getElementById('favoritesSidebarBody');
+    const body  = document.getElementById('favoritesSidebarBody');
     const items = body.querySelectorAll('.favorite-item');
     let emptyState = document.getElementById('favoritesEmptyState');
-
     if (!items.length) {
       if (!emptyState) {
         emptyState = document.createElement('div');
         emptyState.className = 'favorites-empty';
         emptyState.id = 'favoritesEmptyState';
-        emptyState.innerHTML = `
-          <svg width="56" height="56" fill="none" stroke="white" stroke-width="1.6" viewBox="0 0 24 24">
-            <path d="M12 21s-6.7-4.35-9.33-8.15C.7 9.98 2.08 5.5 6.24 4.46c2.2-.55 4.47.2 5.76 1.95 1.29-1.75 3.56-2.5 5.76-1.95 4.16 1.04 5.54 5.52 3.57 8.39C18.7 16.65 12 21 12 21z"/>
-          </svg>
-          <div class="favorites-empty-title">No favorites yet</div>
-          <div class="favorites-empty-desc">Open any car and press Save to build your favorite collection.</div>`;
+        emptyState.innerHTML = `<svg width="56" height="56" fill="none" stroke="white" stroke-width="1.6" viewBox="0 0 24 24"><path d="M12 21s-6.7-4.35-9.33-8.15C.7 9.98 2.08 5.5 6.24 4.46c2.2-.55 4.47.2 5.76 1.95 1.29-1.75 3.56-2.5 5.76-1.95 4.16 1.04 5.54 5.52 3.57 8.39C18.7 16.65 12 21 12 21z"/></svg><div class="favorites-empty-title">No favorites yet</div><div class="favorites-empty-desc">Open any car and press Save to build your favorite collection.</div>`;
         body.appendChild(emptyState);
       }
     } else if (emptyState) {
       emptyState.remove();
     }
-
     updateFavoriteCountDisplay();
   }
 
@@ -1316,12 +1139,12 @@ ob_end_flush();
     const div = document.createElement('div');
     div.className = 'favorite-item';
     div.id = 'favorite-item-' + car.id;
-
-    const meta = `${car.spec4 || ''}`;
     div.onclick = function () {
-      openModal(car.id, car.name, car.brand, car.desc, car.cat, car.price, car.spec1, car.spec2, car.spec3, car.spec4, '', car.imagePath, true);
+      openModal(car.id, car.name, car.brand, car.desc, car.cat, car.price,
+                car.spec1, car.spec2, car.spec3, car.spec4, '', car.imagePath, true,
+                car.year, car.kms, car.engine, car.power, car.drive,
+                car.transmission, car.location, car.description);
     };
-
     div.innerHTML = `
       <div class="favorite-thumb">
         ${car.imagePath ? `<img src="${escapeHtml(car.imagePath)}" alt="${escapeHtml(car.name)}" onerror="this.parentNode.innerHTML='${getPlaceholderThumb().replace(/'/g, "&#39;")}'">` : getPlaceholderThumb()}
@@ -1329,16 +1152,14 @@ ob_end_flush();
       <div class="favorite-item-body">
         <div class="favorite-item-brand">${escapeHtml(car.brand)}</div>
         <div class="favorite-item-name">${escapeHtml(car.name)}</div>
-        <div class="favorite-item-meta">${escapeHtml(meta)}</div>
+        <div class="favorite-item-meta">${escapeHtml(car.spec4)}</div>
         <div class="favorite-item-price">${escapeHtml(car.price)}</div>
-      </div>
-    `;
+      </div>`;
     return div;
   }
 
   function addFavoriteToSidebar(car) {
     if (document.getElementById('favorite-item-' + car.id)) return;
-
     const body = document.getElementById('favoritesSidebarBody');
     const item = buildFavoriteItem(car);
     const emptyState = document.getElementById('favoritesEmptyState');
@@ -1361,23 +1182,45 @@ ob_end_flush();
 
   function getCurrentModalCarData() {
     return {
-      id: currentModalCarId,
-      name: document.getElementById('modalName').textContent,
-      brand: document.getElementById('modalBrand').textContent,
-      desc: document.getElementById('modalDesc').textContent,
-      cat: document.getElementById('modalCat').textContent,
-      price: document.getElementById('modalPrice').childNodes[0]?.textContent?.trim() || document.getElementById('modalPrice').textContent.trim(),
-      spec1: document.querySelectorAll('#modalSpecs .modal-spec-val')[0]?.textContent || '',
-      spec2: document.querySelectorAll('#modalSpecs .modal-spec-val')[1]?.textContent || '',
-      spec3: document.querySelectorAll('#modalSpecs .modal-spec-val')[2]?.textContent || '',
-      spec4: document.querySelectorAll('#modalSpecs .modal-spec-val')[3]?.textContent || '',
+      id:        currentModalCarId,
+      name:      document.getElementById('modalName').textContent,
+      brand:     document.getElementById('modalBrand').textContent,
+      desc:      document.getElementById('modalDesc').textContent,
+      cat:       document.getElementById('modalCat').textContent,
+      price:     document.getElementById('modalPrice').childNodes[0]?.textContent?.trim() || document.getElementById('modalPrice').textContent.trim(),
+      spec1:     document.querySelectorAll('#modalSpecs .modal-spec-val')[0]?.textContent || '',
+      spec2:     document.querySelectorAll('#modalSpecs .modal-spec-val')[1]?.textContent || '',
+      spec3:     document.querySelectorAll('#modalSpecs .modal-spec-val')[2]?.textContent || '',
+      spec4:     document.querySelectorAll('#modalSpecs .modal-spec-val')[3]?.textContent || '',
       imagePath: document.querySelector('#modalImg img')?.getAttribute('src') || ''
     };
   }
 
-  /* ── MODAL ── */
-  function openModal(carId, name, brand, desc, cat, price, spec1, spec2, spec3, spec4, badgeClass, imagePath, isFavorite = false) {
-    currentModalCarId = carId;
+  /* ── MODAL — now accepts extra car DB fields ── */
+  function openModal(carId, name, brand, desc, cat, price, spec1, spec2, spec3, spec4,
+                     badgeClass, imagePath, isFavorite,
+                     year, kms, engine, power, drive, transmission, location, description) {
+    currentModalCarId   = carId;
+    currentModalCarName = name;
+
+    // Store ALL car data for Contact Seller
+    currentModalCarData = {
+      carId:          carId,
+      carName:        name,
+      carBrand:       brand,
+      carCategory:    cat,
+      carYear:        year        || '',
+      carPrice:       price       || '',
+      carKms:         kms         || 0,
+      carEngine:      engine      || spec1 || '',
+      carPower:       power       || spec2 || '',
+      carDrive:       drive       || spec3 || '',
+      carTransmission: transmission || '',
+      carLocation:    location    || '',
+      carImage:       imagePath   || '',
+      carDesc:        description || desc || '',
+    };
+
     document.getElementById('modalName').textContent  = name;
     document.getElementById('modalBrand').textContent = brand;
     document.getElementById('modalDesc').textContent  = desc;
@@ -1404,6 +1247,24 @@ ob_end_flush();
     document.body.style.overflow = 'hidden';
   }
 
+  /* ── CONTACT SELLER — sends ALL car fields to messages.php ── */
+  function contactSeller(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (!currentModalCarId) return;
+    try {
+      sessionStorage.setItem('drivehub_contact_ctx', JSON.stringify(currentModalCarData));
+    } catch (e) {
+      console.error('Could not save contact context:', e);
+    }
+    closeModal();
+    setTimeout(() => {
+      window.location.href = 'messages.php';
+    }, 80);
+  }
+
   async function toggleFavorite(event) {
     if (event) event.stopPropagation();
     if (!currentModalCarId) return;
@@ -1423,7 +1284,6 @@ ob_end_flush();
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: formData.toString()
       });
-
       const data = await response.json();
       if (!data.success) throw new Error(data.message || 'Unable to update favorite.');
 
@@ -1436,7 +1296,6 @@ ob_end_flush();
       } else {
         removeFavoriteFromSidebar(currentModalCarId);
       }
-
       showToast(data.message || (data.saved ? 'Saved to favorites.' : 'Removed from favorites.'));
     } catch (error) {
       btn.textContent = originalText;
@@ -1457,20 +1316,14 @@ ob_end_flush();
 
   function toggleFavoritesSidebar() {
     const sidebar = document.getElementById('favoritesSidebar');
-    if (sidebar.classList.contains('open')) {
-      closeFavoritesSidebar();
-    } else {
-      openFavoritesSidebar();
-    }
+    if (sidebar.classList.contains('open')) closeFavoritesSidebar(); else openFavoritesSidebar();
   }
-
   function openFavoritesSidebar() {
     document.getElementById('favoritesSidebar').classList.add('open');
     document.getElementById('favoritesSidebarOverlay').classList.add('open');
     document.getElementById('favoritesToggle').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
-
   function closeFavoritesSidebar() {
     document.getElementById('favoritesSidebar').classList.remove('open');
     document.getElementById('favoritesSidebarOverlay').classList.remove('open');
@@ -1481,10 +1334,7 @@ ob_end_flush();
   }
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      closeModal();
-      closeFavoritesSidebar();
-    }
+    if (e.key === 'Escape') { closeModal(); closeFavoritesSidebar(); }
   });
 
   /* ── SEARCH / FILTER ── */
@@ -1493,35 +1343,23 @@ ob_end_flush();
     const category = document.getElementById('sfCategory').value.toLowerCase();
     const year     = document.getElementById('sfYear').value;
     const brand    = document.getElementById('sfBrand').value.toLowerCase();
-
-    const cards = document.querySelectorAll('#carGrid .car-card:not(#noResultsState)');
-    let visible = 0;
-
+    const cards    = document.querySelectorAll('#carGrid .car-card:not(#noResultsState)');
+    let visible    = 0;
     cards.forEach(card => {
-      const cardName     = (card.dataset.name     || '').toLowerCase();
-      const cardCategory = (card.dataset.category || '').toLowerCase();
-      const cardYear     = (card.dataset.year     || '');
-      const cardBrand    = (card.dataset.brand    || '').toLowerCase();
-
-      const matchSearch   = !search   || cardName.includes(search);
-      const matchCategory = !category || cardCategory.includes(category);
-      const matchYear     = !year     || cardYear === year;
-      const matchBrand    = !brand    || cardBrand === brand;
-
-      const show = matchSearch && matchCategory && matchYear && matchBrand;
+      const show = (!search || (card.dataset.name||'').toLowerCase().includes(search))
+                && (!category || (card.dataset.category||'').toLowerCase().includes(category))
+                && (!year || card.dataset.year === year)
+                && (!brand || (card.dataset.brand||'').toLowerCase() === brand);
       card.classList.toggle('hidden', !show);
       if (show) visible++;
     });
-
-    const noRes = document.getElementById('noResultsState');
+    const noRes   = document.getElementById('noResultsState');
     const countEl = document.getElementById('sfResultsCount');
-    const countNum = document.getElementById('sfCount');
-
     const isFiltering = search || category || year || brand;
     if (isFiltering) {
       noRes.style.display = visible === 0 ? 'flex' : 'none';
       countEl.style.display = 'block';
-      countNum.textContent = visible;
+      document.getElementById('sfCount').textContent = visible;
     } else {
       noRes.style.display = 'none';
       countEl.style.display = 'none';
@@ -1545,6 +1383,28 @@ ob_end_flush();
       if (a.getAttribute('href') === '#' + current) a.classList.add('active');
     });
   });
+
+  const navMsgBtn = document.getElementById('navMsgBtn');
+  if (navMsgBtn) {
+    navMsgBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.location.href = 'messages.php';
+    });
+  }
+
+  /* Poll unread messages every 30s */
+  setInterval(async () => {
+    try {
+      const res  = await fetch('messages.php?action=fetch_messages');
+      const data = await res.json();
+      if (!data.messages) return;
+      const unread = data.messages.filter(m => m.sender === 'admin' && m.is_read == 0).length;
+      const badge  = document.getElementById('navMsgBadge');
+      badge.textContent   = unread;
+      badge.style.display = unread > 0 ? 'inline-flex' : 'none';
+    } catch(e) {}
+  }, 30000);
 
   ensureFavoritesEmptyState();
   updateFavoriteCountDisplay();

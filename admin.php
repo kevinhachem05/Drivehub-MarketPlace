@@ -8,8 +8,63 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 include 'db.php';
 
+
 $success_msg = '';
 $error_msg   = '';
+
+/* ── Ensure messages table exists ── */
+$conn->query("CREATE TABLE IF NOT EXISTS messages (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT NOT NULL,
+    car_id      INT DEFAULT NULL,
+    car_name    VARCHAR(200) DEFAULT '',
+    car_brand   VARCHAR(100) DEFAULT '',
+    car_category VARCHAR(80) DEFAULT '',
+    car_year    VARCHAR(10) DEFAULT '',
+    car_price   VARCHAR(50) DEFAULT '',
+    car_kms     INT DEFAULT 0,
+    car_engine  VARCHAR(80) DEFAULT '',
+    car_power   VARCHAR(50) DEFAULT '',
+    car_drive   VARCHAR(30) DEFAULT '',
+    car_transmission VARCHAR(50) DEFAULT '',
+    car_location VARCHAR(200) DEFAULT '',
+    car_image   VARCHAR(300) DEFAULT '',
+    car_description TEXT,
+    sender      ENUM('user','admin') NOT NULL DEFAULT 'user',
+    body        TEXT NOT NULL,
+    is_read     TINYINT(1) DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_car_id  (car_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+/* Add missing columns if table already existed */
+$alter_cols = [
+    "car_brand VARCHAR(100) DEFAULT ''",
+    "car_category VARCHAR(80) DEFAULT ''",
+    "car_year VARCHAR(10) DEFAULT ''",
+    "car_price VARCHAR(50) DEFAULT ''",
+    "car_kms INT DEFAULT 0",
+    "car_engine VARCHAR(80) DEFAULT ''",
+    "car_power VARCHAR(50) DEFAULT ''",
+    "car_drive VARCHAR(30) DEFAULT ''",
+    "car_transmission VARCHAR(50) DEFAULT ''",
+    "car_location VARCHAR(200) DEFAULT ''",
+    "car_image VARCHAR(300) DEFAULT ''",
+    "car_description TEXT",
+];
+foreach ($alter_cols as $col) {
+    $col_name = explode(' ', $col)[0];
+    $conn->query("ALTER TABLE messages ADD COLUMN IF NOT EXISTS $col_name " . implode(' ', array_slice(explode(' ', $col), 1)));
+}
+
+/* ── Total unread messages from users ── */
+$admin_unread = 0;
+$unread_res = $conn->query("SELECT COUNT(*) as cnt FROM messages WHERE sender='user' AND is_read=0");
+if ($unread_res) {
+    $admin_unread = (int)($unread_res->fetch_assoc()['cnt'] ?? 0);
+}
+
 
 /* ── DELETE CAR ── */
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
@@ -33,31 +88,23 @@ if (isset($_GET['deleted'])) $success_msg = 'Car removed successfully.';
 /* ── TOGGLE FEATURED ── */
 if (isset($_GET['feature']) && is_numeric($_GET['feature'])) {
     $fid = (int)$_GET['feature'];
-
-    // Count how many are currently featured
     $count_res = $conn->query("SELECT COUNT(*) as cnt FROM cars WHERE featured = 1");
     $count_row = $count_res->fetch_assoc();
     $featured_count = (int)$count_row['cnt'];
-
-    // Check if this car is already featured
     $chk = $conn->prepare("SELECT featured FROM cars WHERE id = ?");
     $chk->bind_param("i", $fid);
     $chk->execute();
     $chk_row = $chk->get_result()->fetch_assoc();
     $chk->close();
-
     if ($chk_row['featured'] == 1) {
-        // Unfeature it
         $stmt = $conn->prepare("UPDATE cars SET featured = 0 WHERE id = ?");
         $stmt->bind_param("i", $fid);
         $stmt->execute();
         $stmt->close();
         header("Location: admin.php?msg=unfeatured");
     } elseif ($featured_count >= 3) {
-        // Already 3 featured — block
         header("Location: admin.php?msg=maxfeatured");
     } else {
-        // Feature it
         $stmt = $conn->prepare("UPDATE cars SET featured = 1 WHERE id = ?");
         $stmt->bind_param("i", $fid);
         $stmt->execute();
@@ -92,10 +139,6 @@ if (isset($_GET['toggle_sold']) && is_numeric($_GET['toggle_sold'])) {
     header("Location: admin.php?msg=" . ($new_sold ? 'sold' : 'unsold'));
     exit();
 }
-if (isset($_GET['msg'])) {
-    if ($_GET['msg'] === 'sold')   $success_msg = 'Car marked as sold.';
-    if ($_GET['msg'] === 'unsold') $success_msg = 'Car marked as available again.';
-}
 
 /* ── EDIT PRICE ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_price') {
@@ -114,7 +157,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 /* ── ADD CAR ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_car') {
-
     $car_name     = trim($_POST['car_name']);
     $brand        = trim($_POST['brand']);
     $category     = trim($_POST['category']);
@@ -219,6 +261,7 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
       --red-dark: #c0290e;
       --green:    #2a9d5c;
       --orange:   #e8891a;
+      --blue:     #3b82f6;
       --input-bg: #1c1c1c;
       --sidebar:  140px;
     }
@@ -249,14 +292,50 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
     .topbar { position: sticky; top: 0; z-index: 50; height: 64px; background: rgba(10,10,10,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 40px; }
     .topbar-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.08em; color: var(--white); }
     .topbar-title span { color: var(--red); }
-    .topbar-right { display: flex; align-items: center; gap: 16px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
     .admin-pill { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; background: var(--card); border: 1px solid var(--border); border-radius: 24px; }
     .admin-avatar { width: 28px; height: 28px; background: var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
     .admin-name { font-size: 13px; font-weight: 500; color: var(--text); }
 
+    /* View Inbox button in topbar */
+    .topbar-inbox-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 8px;
+      color: #60a5fa;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .topbar-inbox-btn:hover {
+      background: rgba(59,130,246,0.2);
+      border-color: rgba(59,130,246,0.55);
+      color: #fff;
+    }
+    .topbar-inbox-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 18px; height: 18px;
+      background: var(--red); color: #fff;
+      border-radius: 999px; font-size: 10px; font-weight: 700;
+      padding: 0 5px;
+    }
+
     /* ── STATS ── */
     .page-content { padding: 36px 40px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 36px; }
+
+    /* ── ALL 5 STAT CARDS ON ONE ROW ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
     .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; position: relative; overflow: hidden; transition: border-color 0.25s, transform 0.2s; }
     .stat-card:hover { border-color: var(--border-h); transform: translateY(-2px); }
     .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent, var(--red)); }
@@ -307,24 +386,32 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
 
     /* ── TABLE ── */
     .table-panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-    .table-header { padding: 20px 28px; border-bottom: 1px solid var(--border); background: var(--panel); display: flex; align-items: center; justify-content: space-between; }
+    .table-header { padding: 20px 28px; border-bottom: 1px solid var(--border); background: var(--panel); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .table-header-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .search-wrap { position: relative; }
     .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #444; }
     .search-input { padding: 8px 14px 8px 36px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; width: 220px; }
     .search-input:focus { border-color: var(--red); }
     .search-input::placeholder { color: #3a3a3a; }
 
+    /* Inline View Inbox button */
+    .table-inbox-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px;
+      background: rgba(59,130,246,0.08);
+      border: 1px solid rgba(59,130,246,0.28);
+      border-radius: 6px;
+      color: #60a5fa;
+      font-size: 12px; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .table-inbox-btn:hover { background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.5); color: #fff; }
+
     /* ── FEATURED SLOT INDICATOR ── */
-    .featured-slots {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 12px; color: var(--muted);
-    }
-    .slot-pip {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: var(--border);
-      border: 1px solid rgba(255,255,255,0.1);
-      transition: background 0.2s;
-    }
+    .featured-slots { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .slot-pip { width: 10px; height: 10px; border-radius: 50%; background: var(--border); border: 1px solid rgba(255,255,255,0.1); transition: background 0.2s; }
     .slot-pip.filled { background: var(--red); border-color: var(--red); }
 
     table { width: 100%; border-collapse: collapse; }
@@ -349,25 +436,9 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
 
     .cat-tag { display: inline-block; padding: 3px 9px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
-    /* ── FEATURE BUTTON ── */
-    .feat-btn {
-      padding: 7px 14px;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 5px;
-      color: var(--muted);
-      font-size: 11px; font-weight: 500;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      cursor: pointer; transition: all 0.2s;
-      font-family: 'DM Sans', sans-serif;
-      text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
-    }
+    .feat-btn { padding: 7px 14px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
     .feat-btn:hover { background: rgba(232,52,26,0.1); border-color: rgba(232,52,26,0.4); color: var(--red); }
-    .feat-btn.active {
-      background: rgba(232,52,26,0.15);
-      border-color: var(--red);
-      color: var(--red);
-    }
+    .feat-btn.active { background: rgba(232,52,26,0.15); border-color: var(--red); color: var(--red); }
     .feat-btn.active:hover { background: rgba(232,52,26,0.25); }
 
     .del-btn { padding: 7px 14px; background: transparent; border: 1px solid rgba(232,52,26,0.25); border-radius: 5px; color: #f87171; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
@@ -388,6 +459,7 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
     .empty-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 0.06em; color: #2a2a2a; margin-bottom: 8px; }
     .empty-sub { font-size: 13px; color: #333; }
 
+    @media (max-width: 1300px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 768px) {
       :root { --sidebar: 64px; }
@@ -427,6 +499,15 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
       <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span>View Site</span>
     </a>
+    <a class="nav-item" href="messages.php">
+      <div style="position:relative;display:inline-flex;">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <?php if ($admin_unread > 0): ?>
+        <span style="position:absolute;top:-5px;right:-5px;width:10px;height:10px;background:#e8341a;border-radius:50%;border:2px solid #0a0a0a;"></span>
+        <?php endif; ?>
+      </div>
+      <span>Messages<?php echo $admin_unread > 0 ? " ($admin_unread)" : ''; ?></span>
+    </a>
   </nav>
   <div class="sidebar-bottom">
     <a class="logout-btn" href="logout.php">
@@ -441,6 +522,14 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
   <header class="topbar">
     <div><div class="topbar-title">Admin <span>Panel</span></div></div>
     <div class="topbar-right">
+      <!-- VIEW INBOX BUTTON next to admin pill -->
+      <a href="messages.php" class="topbar-inbox-btn">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        View Inbox
+        <?php if ($admin_unread > 0): ?>
+        <span class="topbar-inbox-badge"><?php echo $admin_unread; ?></span>
+        <?php endif; ?>
+      </a>
       <div class="admin-pill">
         <div class="admin-avatar"><?php echo strtoupper(substr($_SESSION['first_name'],0,1)); ?></div>
         <span class="admin-name"><?php echo htmlspecialchars($_SESSION['first_name']); ?></span>
@@ -464,7 +553,7 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
     </div>
     <?php endif; ?>
 
-    <!-- STATS -->
+    <!-- STATS — all 5 on one row -->
     <div class="stats-grid">
       <div class="stat-card" style="--accent: var(--red)">
         <div class="stat-icon"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M1 10h22M5 6l2-4h10l2 4M1 14l4-4h14l4 4"/></svg></div>
@@ -481,10 +570,21 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
         <div class="stat-num"><?php echo count(array_unique(array_column($all_cars,'category'))); ?></div>
         <div class="stat-label">Categories Active</div>
       </div>
-      <div class="stat-card" style="--accent: #e8341a">
-        <div class="stat-icon" style="color:#e8341a"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      <div class="stat-card" style="--accent: var(--red)">
+        <div class="stat-icon" style="color:var(--red)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
         <div class="stat-num"><?php echo $featured_count; ?>/3</div>
         <div class="stat-label">Featured This Week</div>
+      </div>
+      <!-- Messages stat card — same size as others, no span -->
+      <div class="stat-card" style="--accent: var(--blue)">
+        <div class="stat-icon" style="color:var(--blue)">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="stat-num">
+          <?php echo $admin_unread; ?>
+          <?php if ($admin_unread > 0): ?><span style="color:var(--blue);font-size:22px">!</span><?php endif; ?>
+        </div>
+        <div class="stat-label">Unread Messages</div>
       </div>
     </div>
 
@@ -558,9 +658,16 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
 
     <div class="table-panel">
       <div class="table-header">
-        <div class="search-wrap">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" type="text" placeholder="Search listings..." id="tableSearch" oninput="filterTable(this.value)"/>
+        <div class="table-header-left">
+          <div class="search-wrap">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" type="text" placeholder="Search listings..." id="tableSearch" oninput="filterTable(this.value)"/>
+          </div>
+          <!-- View Inbox button beside search -->
+          <a href="messages.php" class="table-inbox-btn">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            View Inbox <?php if ($admin_unread > 0) echo "($admin_unread unread)"; ?>
+          </a>
         </div>
         <!-- Featured slot indicator -->
         <div class="featured-slots">
@@ -582,16 +689,8 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
       <table id="carsTable">
         <thead>
           <tr>
-            <th>Photo</th>
-            <th>Vehicle</th>
-            <th>Category</th>
-            <th>Year</th>
-            <th>KMs</th>
-            <th>Price</th>
-            <th>Badge</th>
-            <th>Location</th>
-            <th>Featured</th>
-            <th>Action</th>
+            <th>Photo</th><th>Vehicle</th><th>Category</th><th>Year</th><th>KMs</th>
+            <th>Price</th><th>Badge</th><th>Location</th><th>Featured</th><th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -653,15 +752,15 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
   </div>
 </div>
 
-<!-- SOLD CONFIRMATION MODAL -->
+<!-- SOLD MODAL -->
 <div id="soldModal" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;">
   <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:40px;max-width:420px;width:90%;position:relative;text-align:center;">
     <div id="soldModalIcon" style="width:60px;height:60px;border-radius:12px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;"></div>
     <div id="soldModalTitle" style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.06em;color:var(--white);margin-bottom:8px;"></div>
     <div id="soldModalMsg" style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:28px;"></div>
     <div style="display:flex;gap:10px;justify-content:center;">
-      <button onclick="document.getElementById('soldModal').style.display='none'" style="padding:12px 24px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='#1e1e1e'" onmouseout="this.style.background='transparent'">Cancel</button>
-      <a id="soldConfirmLink" href="#" style="padding:12px 28px;background:var(--green);border:none;border-radius:6px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;cursor:pointer;text-decoration:none;display:inline-block;text-align:center;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">CONFIRM</a>
+      <button onclick="document.getElementById('soldModal').style.display='none'" style="padding:12px 24px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">Cancel</button>
+      <a id="soldConfirmLink" href="#" style="padding:12px 28px;background:var(--green);border:none;border-radius:6px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;cursor:pointer;text-decoration:none;display:inline-block;text-align:center;transition:opacity .2s;">CONFIRM</a>
     </div>
   </div>
 </div>
@@ -680,7 +779,7 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
       <div style="margin-bottom:20px;">
         <label style="display:block;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">New Price</label>
         <input type="text" name="new_price" id="editPriceInput" placeholder="e.g. $45,000" required
-          style="width:100%;padding:12px 14px;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;"
+          style="width:100%;padding:12px 14px;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;"
           onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"/>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;">
@@ -718,66 +817,47 @@ $featured_count = count(array_filter($all_cars, fn($c) => $c['featured'] == 1));
     };
     reader.readAsDataURL(file);
   }
-
-  const zone = document.getElementById('uploadZone');
-  if (zone) {
-    zone.addEventListener('dragover', () => zone.classList.add('drag-over'));
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', () => zone.classList.remove('drag-over'));
-  }
-
   function openSoldModal(id, name, isSold) {
     const icon = document.getElementById('soldModalIcon');
     const title = document.getElementById('soldModalTitle');
     const msg = document.getElementById('soldModalMsg');
     const link = document.getElementById('soldConfirmLink');
-
     if (isSold) {
-      icon.style.background = 'rgba(102,102,102,0.12)';
-      icon.style.border = '1px solid rgba(102,102,102,0.25)';
-      icon.style.color = '#aaa';
+      icon.style.background = 'rgba(102,102,102,0.12)'; icon.style.border = '1px solid rgba(102,102,102,0.25)'; icon.style.color = '#aaa';
       icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M9 12l2 2 4-4"/></svg>';
       title.textContent = 'Mark as Available?';
       msg.textContent = '"' + name + '" will be listed as available again for buyers.';
       link.style.background = '#555';
     } else {
-      icon.style.background = 'rgba(42,157,92,0.12)';
-      icon.style.border = '1px solid rgba(42,157,92,0.25)';
-      icon.style.color = '#4ade80';
+      icon.style.background = 'rgba(42,157,92,0.12)'; icon.style.border = '1px solid rgba(42,157,92,0.25)'; icon.style.color = '#4ade80';
       icon.innerHTML = '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
       title.textContent = 'Mark as Sold?';
-      msg.textContent = '"' + name + '" will appear as sold on the site. It stays visible but marked as unavailable.';
+      msg.textContent = '"' + name + '" will appear as sold on the site.';
       link.style.background = 'var(--green)';
     }
-
     link.href = 'admin.php?toggle_sold=' + id;
     document.getElementById('soldModal').style.display = 'flex';
   }
-
   function openEditPriceModal(id, currentPrice, carName) {
-    document.getElementById('editPriceCarId').value  = id;
-    document.getElementById('editPriceInput').value  = currentPrice;
+    document.getElementById('editPriceCarId').value = id;
+    document.getElementById('editPriceInput').value = currentPrice;
     document.getElementById('editPriceCarName').textContent = carName;
     document.getElementById('editPriceModal').style.display = 'flex';
     setTimeout(() => document.getElementById('editPriceInput').focus(), 100);
   }
-
   function confirmDelete(id, name) {
     document.getElementById('deleteModalMsg').textContent = `"${name}" will be permanently removed from all listings.`;
     document.getElementById('deleteConfirmLink').href = `admin.php?delete=${id}`;
     document.getElementById('deleteModal').style.display = 'flex';
   }
-
   function filterTable(q) {
     const rows = document.querySelectorAll('#carsTable tbody tr');
     q = q.toLowerCase();
     rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
   }
-
   setTimeout(() => {
     document.querySelectorAll('.alert').forEach(a => {
-      a.style.transition = 'opacity .5s';
-      a.style.opacity = '0';
+      a.style.transition = 'opacity .5s'; a.style.opacity = '0';
       setTimeout(() => a.remove(), 500);
     });
   }, 4000);

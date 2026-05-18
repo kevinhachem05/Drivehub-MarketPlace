@@ -26,6 +26,19 @@ $su_email_value         = '';
 $show_signup            = false;
 
 // ── LOGIN ──
+/* ── CREATE is_active COLUMN IF NOT EXISTS ── */
+$check = $conn->query("SHOW COLUMNS FROM users LIKE 'is_active'");
+
+if ($check && $check->num_rows === 0) {
+    $create = $conn->query("
+        ALTER TABLE users 
+        ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1
+    ");
+
+    if (!$create) {
+        die("Error creating is_active column: " . $conn->error);
+    }
+}
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['form_type']) && $_POST['form_type'] === 'login') {
     $email    = trim($_POST['email']);
     $password = $_POST['password'];
@@ -39,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['form_type']) && $_POST
     } elseif (empty($password)) {
         $password_error = 'Please enter your password.';
     } else {
-        $sql  = "SELECT id, first_name, last_name, email, password FROM users WHERE email = ?";
+        $sql  = "SELECT id, first_name, last_name, email, password, is_active FROM users WHERE email = ?";
         $stmt = $conn->prepare($sql);
 
         if (!$stmt) {
@@ -55,26 +68,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['form_type']) && $_POST
             $user = $result->fetch_assoc();
 
             if (password_verify($password, $user['password'])) {
-                $_SESSION['user_id']    = $user['id'];
-                $_SESSION['first_name'] = $user['first_name'];
-                $_SESSION['email']      = $user['email'];
 
-                if (in_array(strtolower(trim($email)), array_map('strtolower', $superadmin_email))) {
-                    $_SESSION['role'] = 'superadmin';
-                    ob_end_clean();
-                    header("Location: superadmin.php");
-                    exit();
-                } elseif (in_array(strtolower(trim($email)), array_map('strtolower', $admin_emails))) {
-                    $_SESSION['role'] = 'admin';
-                    ob_end_clean();
-                    header("Location: admin.php");
-                    exit();
+                // ── CHECK IF ACCOUNT IS ACTIVE ──
+                // is_active may not exist yet in old DBs — treat NULL as active
+                $is_active = isset($user['is_active']) ? (int)$user['is_active'] : 1;
+
+                if ($is_active === 0) {
+                    $email_error = 'Your account has been deactivated. Please contact support.';
                 } else {
-                    $_SESSION['role'] = 'user';
-                    ob_end_clean();
-                    header("Location: home.php");
-                    exit();
+                    $_SESSION['user_id']    = $user['id'];
+                    $_SESSION['first_name'] = $user['first_name'];
+                    $_SESSION['email']      = $user['email'];
+
+                    if (in_array(strtolower(trim($email)), array_map('strtolower', $superadmin_email))) {
+                        $_SESSION['role'] = 'superadmin';
+                        ob_end_clean();
+                        header("Location: superadmin.php");
+                        exit();
+                    } elseif (in_array(strtolower(trim($email)), array_map('strtolower', $admin_emails))) {
+                        $_SESSION['role'] = 'admin';
+                        ob_end_clean();
+                        header("Location: admin.php");
+                        exit();
+                    } else {
+                        $_SESSION['role'] = 'user';
+                        ob_end_clean();
+                        header("Location: home.php");
+                        exit();
+                    }
                 }
+
             } else {
                 $password_error = 'Incorrect password. Please try again.';
             }
@@ -91,39 +114,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['form_type']) && $_POST
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['form_type']) && $_POST['form_type'] === 'signup') {
     $show_signup = true;
 
-    $first_name      = trim($_POST['first_name']);
-    $last_name       = trim($_POST['last_name']);
-    $email           = trim($_POST['email']);
-    $password        = $_POST['password'];
+    $first_name       = trim($_POST['first_name']);
+    $last_name        = trim($_POST['last_name']);
+    $email            = trim($_POST['email']);
+    $password         = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
-    // Keep values to repopulate fields
     $su_first_name_value = htmlspecialchars($first_name);
     $su_last_name_value  = htmlspecialchars($last_name);
     $su_email_value      = htmlspecialchars($email);
 
-    // Validate
-    if (empty($first_name)) {
-        $su_first_name_error = 'Please enter your first name.';
-    }
-    if (empty($last_name)) {
-        $su_last_name_error = 'Please enter your last name.';
-    }
-    if (empty($email)) {
-        $su_email_error = 'Please enter your email address.';
-    }
-    if (empty($password)) {
-        $su_password_error = 'Please enter a password.';
-    } elseif (strlen($password) < 8) {
-        $su_password_error = 'Password must be at least 8 characters.';
-    }
-    if (empty($confirm_password)) {
-        $su_confirm_error = 'Please confirm your password.';
-    } elseif ($password !== $confirm_password) {
-        $su_confirm_error = 'Passwords do not match. Please try again.';
-    }
+    if (empty($first_name))  $su_first_name_error = 'Please enter your first name.';
+    if (empty($last_name))   $su_last_name_error  = 'Please enter your last name.';
+    if (empty($email))       $su_email_error      = 'Please enter your email address.';
+    if (empty($password))    $su_password_error   = 'Please enter a password.';
+    elseif (strlen($password) < 8) $su_password_error = 'Password must be at least 8 characters.';
+    if (empty($confirm_password)) $su_confirm_error = 'Please confirm your password.';
+    elseif ($password !== $confirm_password) $su_confirm_error = 'Passwords do not match. Please try again.';
 
-    // Only hit DB if no validation errors
     if (empty($su_first_name_error) && empty($su_last_name_error) && empty($su_email_error) && empty($su_password_error) && empty($su_confirm_error)) {
         $check_sql = "SELECT id FROM users WHERE email = ?";
         $stmt = $conn->prepare($check_sql);
@@ -135,7 +143,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['form_type']) && $_POST
             $su_email_error = 'An account with this email already exists.';
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $sql = "INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)";
+            // New users are active by default (is_active = 1)
+            $sql = "INSERT INTO users (first_name, last_name, email, password, is_active) VALUES (?, ?, ?, ?, 1)";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("ssss", $first_name, $last_name, $email, $hashed_password);
 
@@ -163,7 +172,6 @@ ob_end_flush();
   <title>DriveHub — Sign In</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -190,7 +198,6 @@ html, body {
   overflow: hidden;
 }
 
-/* ─── Layout ─── */
 .page {
   display: grid;
   grid-template-columns: 1fr 480px;
@@ -202,26 +209,6 @@ html, body {
   position: relative;
   overflow: hidden;
   background: #000;
-}
-
-.hero-img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0.55;
-  transform: scale(1.05);
-  animation: zoomOut 12s ease forwards;
-  display: block;
-}
-
-@keyframes zoomOut {
-  from { transform: scale(1.05); }
-  to   { transform: scale(1.0); }
-}
-
-.hero::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(to right, transparent 50%, var(--black) 100%);
 }
 
 .hero-lines {
@@ -250,12 +237,9 @@ html, body {
 
 .hero-eyebrow {
   font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--red);
-  margin-bottom: 12px;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--red); margin-bottom: 12px;
 }
 
 .hero-title {
@@ -265,46 +249,24 @@ html, body {
   color: var(--white);
   letter-spacing: 0.02em;
 }
-
 .hero-title span { color: var(--red); }
 
 .hero-sub {
-  margin-top: 18px;
-  font-size: 14px;
-  font-weight: 300;
-  color: rgba(255,255,255,0.5);
-  max-width: 320px;
-  line-height: 1.6;
+  margin-top: 18px; font-size: 14px; font-weight: 300;
+  color: rgba(255,255,255,0.5); max-width: 320px; line-height: 1.6;
 }
 
-.stat-row {
-  display: flex; gap: 40px;
-  margin-top: 40px;
-}
-
-.stat-num {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
-  color: var(--white);
-  letter-spacing: 0.05em;
-}
-.stat-label {
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
+.stat-row { display: flex; gap: 40px; margin-top: 40px; }
+.stat-num  { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--white); letter-spacing: 0.05em; }
+.stat-label { font-size: 11px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
 
 /* ─── Right form panel ─── */
 .panel {
   background: var(--panel);
   border-left: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: flex; flex-direction: column; justify-content: center;
   padding: 60px 52px;
-  position: relative;
-  overflow: hidden;
+  position: relative; overflow: hidden;
   animation: fadeSlide 0.7s cubic-bezier(.22,1,.36,1) 0.1s both;
 }
 
@@ -315,198 +277,78 @@ html, body {
 
 .panel::before {
   content: '';
-  position: absolute;
-  top: -1px; right: -1px;
+  position: absolute; top: -1px; right: -1px;
   width: 120px; height: 120px;
   background: conic-gradient(from 180deg at 100% 0%, var(--red) 0deg, transparent 90deg);
   opacity: 0.25;
 }
 
 /* ─── Logo ─── */
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 52px;
-}
-
+.logo { display: flex; align-items: center; gap: 10px; margin-bottom: 52px; }
 .logo-mark {
-  width: 36px; height: 36px;
-  background: var(--red);
+  width: 36px; height: 36px; background: var(--red);
   clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-
-.logo-icon {
-  font-size: 15px;
-  color: #fff;
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 6px;
-}
-
-.logo-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
-  letter-spacing: 0.1em;
-  color: var(--white);
-}
+.logo-icon { font-size: 15px; color: #fff; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+.logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.1em; color: var(--white); }
 
 /* ─── Headings ─── */
-.panel-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 42px;
-  color: var(--white);
-  letter-spacing: 0.04em;
-  line-height: 1;
-  margin-bottom: 6px;
-}
-
-.panel-sub {
-  font-size: 13px;
-  font-weight: 300;
-  color: var(--muted);
-  margin-bottom: 36px;
-}
-
-.panel-sub a {
-  color: var(--red);
-  text-decoration: none;
-  font-weight: 500;
-  transition: opacity 0.2s;
-}
+.panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; color: var(--white); letter-spacing: 0.04em; line-height: 1; margin-bottom: 6px; }
+.panel-sub { font-size: 13px; font-weight: 300; color: var(--muted); margin-bottom: 36px; }
+.panel-sub a { color: var(--red); text-decoration: none; font-weight: 500; transition: opacity 0.2s; }
 .panel-sub a:hover { opacity: 0.8; }
 
 /* ─── Social login ─── */
-.social-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  margin-bottom: 28px;
-}
-
+.social-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 28px; }
 .social-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 11px 16px;
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  padding: 11px 16px; background: var(--input-bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
 }
-
-.social-btn:hover {
-  border-color: rgba(255,255,255,0.2);
-  background: #222;
-}
-
+.social-btn:hover { border-color: rgba(255,255,255,0.2); background: #222; }
 .social-btn svg { flex-shrink: 0; }
 
 /* ─── Divider ─── */
-.divider {
-  display: flex; align-items: center; gap: 14px;
-  margin-bottom: 28px;
-}
-
-.divider-line {
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.divider-text {
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
+.divider { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+.divider-line { flex: 1; height: 1px; background: var(--border); }
+.divider-text { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
 
 /* ─── Form ─── */
 .form { display: flex; flex-direction: column; gap: 16px; }
-
 .field { display: flex; flex-direction: column; gap: 6px; }
-
-.field label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.45);
-}
-
+.field label { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
 .input-wrap { position: relative; }
-
 .input-wrap svg:first-child {
-  position: absolute;
-  left: 14px;
-  top: 50%; transform: translateY(-50%);
-  color: var(--muted);
-  pointer-events: none;
-  transition: color 0.2s;
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); pointer-events: none; transition: color 0.2s;
 }
-
 .field input {
-  width: 100%;
-  padding: 13px 14px 13px 42px;
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  width: 100%; padding: 13px 14px 13px 42px;
+  background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
-
 .field input::placeholder { color: #444; }
-
-.field input:focus {
-  border-color: var(--red);
-  box-shadow: 0 0 0 3px rgba(232,52,26,0.12);
-}
+.field input:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(232,52,26,0.12); }
 
 /* ─── Error states ─── */
-.input-wrap.has-error svg:first-child {
-  color: var(--error);
-}
-
+.input-wrap.has-error svg:first-child { color: var(--error); }
 .field input.input-error {
-  border-color: var(--error-border);
-  background: var(--error-bg);
+  border-color: var(--error-border); background: var(--error-bg);
   box-shadow: 0 0 0 3px rgba(232, 52, 26, 0.08);
 }
-
-.field input.input-error:focus {
-  border-color: var(--error);
-  box-shadow: 0 0 0 3px rgba(232, 52, 26, 0.18);
-}
-
+.field input.input-error:focus { border-color: var(--error); box-shadow: 0 0 0 3px rgba(232, 52, 26, 0.18); }
 .field-error {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  margin-top: 4px;
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
-  border-radius: 5px;
-  color: var(--error);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  line-height: 1.4;
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 10px; margin-top: 4px;
+  background: var(--error-bg); border: 1px solid var(--error-border);
+  border-radius: 5px; color: var(--error);
+  font-size: 12px; font-weight: 400; letter-spacing: 0.01em; line-height: 1.4;
   animation: errorSlide 0.22s cubic-bezier(.22,1,.36,1) both;
 }
-
-.field-error svg {
-  flex-shrink: 0;
-  opacity: 0.9;
-}
-
+.field-error svg { flex-shrink: 0; opacity: 0.9; }
 @keyframes errorSlide {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -514,79 +356,54 @@ html, body {
 
 /* ─── Eye button ─── */
 .eye-btn {
-  position: absolute;
-  right: 14px; top: 50%; transform: translateY(-50%);
-  background: none; border: none;
-  color: var(--muted); cursor: pointer;
-  padding: 0; line-height: 1;
-  transition: color 0.2s;
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  padding: 0; line-height: 1; transition: color 0.2s;
 }
 .eye-btn:hover { color: var(--text); }
 
 /* ─── Forgot ─── */
-.meta-row {
-  display: flex; justify-content: flex-end;
-  margin-top: -6px;
-}
-
-.forgot {
-  font-size: 12px;
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 0.2s;
-}
+.meta-row { display: flex; justify-content: flex-end; margin-top: -6px; }
+.forgot { font-size: 12px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
 .forgot:hover { color: var(--red); }
 
 /* ─── Submit ─── */
 .submit-btn {
-  margin-top: 4px;
-  width: 100%;
-  padding: 15px;
-  background: var(--red);
-  border: none;
-  border-radius: 6px;
-  color: #fff;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
+  margin-top: 4px; width: 100%; padding: 15px;
+  background: var(--red); border: none; border-radius: 6px;
+  color: #fff; font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 0.12em; cursor: pointer;
+  position: relative; overflow: hidden;
   transition: background 0.2s, transform 0.1s;
 }
-
 .submit-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
+  content: ''; position: absolute; inset: 0;
   background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
-  transform: translateX(-100%);
-  transition: transform 0.5s;
+  transform: translateX(-100%); transition: transform 0.5s;
 }
-
 .submit-btn:hover { background: #d42f17; }
 .submit-btn:hover::after { transform: translateX(100%); }
 .submit-btn:active { transform: scale(0.98); }
 
-/* ─── Footer note ─── */
-.terms {
-  margin-top: 20px;
-  font-size: 11px;
-  color: #444;
-  text-align: center;
-  line-height: 1.6;
+/* ─── Deactivated banner ─── */
+.deactivated-banner {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; margin-bottom: 20px;
+  background: rgba(232,52,26,0.08);
+  border: 1px solid rgba(232,52,26,0.35);
+  border-radius: 6px;
+  animation: errorSlide 0.25s cubic-bezier(.22,1,.36,1) both;
 }
+.deactivated-banner svg { flex-shrink: 0; margin-top: 1px; color: #e8341a; }
+.deactivated-banner-text { font-size: 13px; line-height: 1.5; color: #f07060; }
+.deactivated-banner-title { font-weight: 500; color: #e8341a; margin-bottom: 2px; font-size: 13px; }
+
+/* ─── Footer note ─── */
+.terms { margin-top: 20px; font-size: 11px; color: #444; text-align: center; line-height: 1.6; }
 .terms a { color: var(--muted); text-decoration: none; }
 .terms a:hover { color: var(--red); }
 
-@keyframes fadeOut {
-  from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(-20px); }
-}
-
-.signup-panel {
-  overflow-y: auto;
-}
+.signup-panel { overflow-y: auto; }
 
 @media (max-width: 860px) {
   .page { grid-template-columns: 1fr; overflow: auto; }
@@ -606,8 +423,7 @@ html, body {
 
     <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg"
       style="position:absolute;inset:0;width:100%;height:100%;opacity:0.12;">
-      <path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z"
-        fill="white"/>
+      <path d="M60 280 Q80 200 160 180 L280 140 Q380 100 500 130 L660 160 Q740 180 760 220 L780 260 Q780 280 720 285 Q700 240 640 240 Q580 240 560 285 L280 285 Q260 240 200 240 Q140 240 120 285 Z" fill="white"/>
       <circle cx="200" cy="300" r="44" fill="white"/>
       <circle cx="620" cy="300" r="44" fill="white"/>
       <circle cx="200" cy="300" r="28" fill="#0a0a0a"/>
@@ -645,14 +461,28 @@ html, body {
   <div class="panel" id="loginPanel" <?= $show_signup ? 'style="display:none;"' : '' ?>>
 
     <div class="logo">
-      <div class="logo-mark">
-        <span class="logo-icon">⬡</span>
-      </div>
+      <div class="logo-mark"><span class="logo-icon">⬡</span></div>
       <span class="logo-name">DriveHub</span>
     </div>
 
     <h2 class="panel-title">WELCOME<br>BACK</h2>
     <p class="panel-sub">No account? <a href="#" onclick="showSignup(event)">Create one free →</a></p>
+
+    <?php
+      // Show a prominent banner specifically for deactivated accounts
+      $is_deactivated_error = (!empty($email_error) && strpos($email_error, 'deactivated') !== false);
+    ?>
+    <?php if ($is_deactivated_error): ?>
+      <div class="deactivated-banner">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div>
+          <div class="deactivated-banner-title">Account Deactivated</div>
+          <div class="deactivated-banner-text">Your account has been suspended by an administrator. Please contact support to restore access.</div>
+        </div>
+      </div>
+    <?php endif; ?>
 
     <div class="social-row">
       <button class="social-btn">
@@ -680,23 +510,22 @@ html, body {
 
     <form class="form" action="login.php" method="POST">
       <input type="hidden" name="form_type" value="login"/>
+
       <div class="field">
         <label>Email address</label>
-        <div class="input-wrap <?= !empty($email_error) ? 'has-error' : '' ?>">
+        <div class="input-wrap <?= (!empty($email_error) && !$is_deactivated_error) ? 'has-error' : '' ?>">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="2" y="4" width="20" height="16" rx="2"/>
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
           </svg>
           <input type="email" name="email" placeholder="you@example.com" autocomplete="email"
             value="<?= $email_value ?>"
-            class="<?= !empty($email_error) ? 'input-error' : '' ?>"/>
+            class="<?= (!empty($email_error) && !$is_deactivated_error) ? 'input-error' : '' ?>"/>
         </div>
-        <?php if (!empty($email_error)): ?>
+        <?php if (!empty($email_error) && !$is_deactivated_error): ?>
           <div class="field-error">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <?= htmlspecialchars($email_error) ?>
           </div>
@@ -722,9 +551,7 @@ html, body {
         <?php if (!empty($password_error)): ?>
           <div class="field-error">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <?= htmlspecialchars($password_error) ?>
           </div>
@@ -748,9 +575,7 @@ html, body {
   <div class="panel signup-panel" id="signupPanel" <?= $show_signup ? '' : 'style="display:none;"' ?>>
 
     <div class="logo">
-      <div class="logo-mark">
-        <span class="logo-icon">⬡</span>
-      </div>
+      <div class="logo-mark"><span class="logo-icon">⬡</span></div>
       <span class="logo-name">DriveHub</span>
     </div>
 
@@ -774,9 +599,7 @@ html, body {
           <?php if (!empty($su_first_name_error)): ?>
             <div class="field-error">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
               <?= htmlspecialchars($su_first_name_error) ?>
             </div>
@@ -796,9 +619,7 @@ html, body {
           <?php if (!empty($su_last_name_error)): ?>
             <div class="field-error">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
               <?= htmlspecialchars($su_last_name_error) ?>
             </div>
@@ -820,9 +641,7 @@ html, body {
         <?php if (!empty($su_email_error)): ?>
           <div class="field-error">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <?= htmlspecialchars($su_email_error) ?>
           </div>
@@ -848,9 +667,7 @@ html, body {
         <?php if (!empty($su_password_error)): ?>
           <div class="field-error">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <?= htmlspecialchars($su_password_error) ?>
           </div>
@@ -870,9 +687,7 @@ html, body {
         <?php if (!empty($su_confirm_error)): ?>
           <div class="field-error">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <?= htmlspecialchars($su_confirm_error) ?>
           </div>
